@@ -1,4 +1,4 @@
-package com.kotlintexteditor
+package com.example.kotlintexteditor
 
 import org.junit.Test
 

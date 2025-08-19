@@ -1,4 +1,4 @@
-package com.kotlintexteditor.ui.theme
+package com.example.kotlintexteditor.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

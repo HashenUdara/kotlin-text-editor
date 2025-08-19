@@ -1,4 +1,4 @@
-package com.kotlintexteditor.ui.theme
+package com.example.kotlintexteditor.ui.theme
 
 import android.app.Activity
 import android.os.Build
