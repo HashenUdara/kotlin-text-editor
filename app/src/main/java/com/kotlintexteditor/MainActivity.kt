@@ -1,23 +1,33 @@
 package com.kotlintexteditor
 
+import android.Manifest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.kotlintexteditor.data.FilePickerContracts
 import com.kotlintexteditor.ui.editor.CodeEditorView
 import com.kotlintexteditor.ui.editor.EditorLanguage
 import com.kotlintexteditor.ui.editor.EditorState
-import com.kotlintexteditor.ui.editor.rememberEditorState
+import com.kotlintexteditor.ui.editor.TextEditorViewModel
+import com.kotlintexteditor.ui.editor.TextEditorUiState
+import com.kotlintexteditor.ui.editor.TextOperationsToolbar
 import com.kotlintexteditor.ui.theme.KotlinTextEditorTheme
 
 class MainActivity : ComponentActivity() {
@@ -32,30 +42,34 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun TextEditorApp() {
-    val editorState = rememberEditorState(
-        initialText = """// Welcome to Kotlin Text Editor
-fun main() {
-    println("Hello, World!")
+    val viewModel: TextEditorViewModel = viewModel()
+    val editorState by viewModel.editorState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val selectionState by viewModel.selectionState.collectAsState()
+    val canUndo by viewModel.canUndo.collectAsState()
+    val canRedo by viewModel.canRedo.collectAsState()
+    val canPaste by viewModel.canPaste.collectAsState()
     
-    // TODO: Start coding your Kotlin project here
-    val message = "This is a basic text editor"
-    println(message)
-}
-
-class Calculator {
-    fun add(a: Int, b: Int): Int {
-        return a + b
+    // File operation launchers
+    val openFileLauncher = rememberLauncherForActivityResult(
+        contract = FilePickerContracts.createOpenFileContract()
+    ) { uri ->
+        uri?.let { viewModel.openFile(it) }
     }
     
-    fun multiply(a: Int, b: Int): Int = a * b
-}
-"""
-    )
+    val saveFileLauncher = rememberLauncherForActivityResult(
+        contract = FilePickerContracts.createNewFileContract()
+    ) { uri ->
+        uri?.let { viewModel.saveFile(it) }
+    }
     
-    var currentEditorState by editorState
+    // Storage permission handling
+    val storagePermissionState = rememberPermissionState(
+        Manifest.permission.READ_EXTERNAL_STORAGE
+    )
 
     Scaffold(
         topBar = {
@@ -64,19 +78,57 @@ class Calculator {
                     Text("Kotlin Text Editor") 
                 },
                 navigationIcon = {
-                    IconButton(onClick = { /* TODO: Add menu functionality */ }) {
+                    IconButton(onClick = { 
+                        // Show menu with file operations
+                    }) {
                         Icon(Icons.Default.Menu, contentDescription = "Menu")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* TODO: Add save functionality */ }) {
-                        Icon(Icons.Default.Save, contentDescription = "Save")
+                    // New file button
+                    IconButton(onClick = { viewModel.newFile() }) {
+                        Icon(Icons.Default.Add, contentDescription = "New File")
+                    }
+                    
+                    // Open file button
+                    IconButton(onClick = { 
+                        if (storagePermissionState.status.isGranted) {
+                            openFileLauncher.launch(arrayOf("*/*"))
+                        } else {
+                            storagePermissionState.launchPermissionRequest()
+                        }
+                    }) {
+                        Icon(Icons.Default.FolderOpen, contentDescription = "Open File")
+                    }
+                    
+                    // Save file button
+                    IconButton(
+                        onClick = { 
+                            if (uiState.currentFileUri != null) {
+                                viewModel.saveFile()
+                            } else {
+                                // Save as new file
+                                val fileName = "${viewModel.getCurrentFileName()}"
+                                saveFileLauncher.launch(fileName)
+                            }
+                        },
+                        enabled = editorState.isModified
+                    ) {
+                        Icon(
+                            imageVector = if (uiState.currentFileUri != null) Icons.Default.Save else Icons.Default.SaveAs,
+                            contentDescription = if (uiState.currentFileUri != null) "Save" else "Save As"
+                        )
                     }
                 }
             )
         },
         bottomBar = {
-            StatusBar(editorState = currentEditorState)
+            StatusBar(
+                editorState = editorState,
+                uiState = uiState,
+                onClearError = viewModel::clearError,
+                onClearStatus = viewModel::clearStatus
+            )
         }
     ) { paddingValues ->
         Column(
@@ -84,26 +136,53 @@ class Calculator {
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Main editor area
-            CodeEditorView(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                initialText = currentEditorState.text,
-                language = currentEditorState.language,
-                onTextChanged = { newText ->
-                    currentEditorState = EditorState.fromText(
-                        text = newText,
-                        filePath = currentEditorState.filePath
-                    ).copy(isModified = true)
+            // Loading indicator
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
-            )
+            } else {
+                // Text operations toolbar
+                TextOperationsToolbar(
+                    canUndo = canUndo,
+                    canRedo = canRedo,
+                    canPaste = canPaste,
+                    hasSelection = selectionState.hasSelection,
+                    onCopy = viewModel::copyText,
+                    onCut = viewModel::cutText,
+                    onPaste = viewModel::pasteText,
+                    onUndo = viewModel::undo,
+                    onRedo = viewModel::redo,
+                    onSelectAll = viewModel::selectAll,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+                
+                // Main editor area
+                CodeEditorView(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    initialText = editorState.text,
+                    language = editorState.language,
+                    onTextChanged = { newText ->
+                        viewModel.updateText(newText)
+                    }
+                )
+            }
         }
     }
 }
 
 @Composable
-fun StatusBar(editorState: EditorState) {
+fun StatusBar(
+    editorState: EditorState,
+    uiState: TextEditorUiState,
+    onClearError: () -> Unit,
+    onClearStatus: () -> Unit
+) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -116,12 +195,70 @@ fun StatusBar(editorState: EditorState) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // File info
-            Text(
-                text = editorState.filePath ?: "Untitled.kt",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            // File info and status
+            Column {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = editorState.filePath ?: "Untitled.kt",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    if (editorState.isModified) {
+                        Text(
+                            text = "•",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    
+                    if (uiState.autoSaveEnabled) {
+                        Icon(
+                            imageVector = Icons.Default.CloudDone,
+                            contentDescription = "Auto-save enabled",
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    
+                    if (uiState.isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(12.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                }
+                
+                // Error or status message
+                uiState.errorMessage?.let { error ->
+                    Text(
+                        text = error,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                    LaunchedEffect(error) {
+                        kotlinx.coroutines.delay(5000)
+                        onClearError()
+                    }
+                }
+                
+                uiState.statusMessage?.let { status ->
+                    Text(
+                        text = status,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                    LaunchedEffect(status) {
+                        kotlinx.coroutines.delay(3000)
+                        onClearStatus()
+                    }
+                }
+            }
             
             // Stats
             Row(
@@ -154,10 +291,39 @@ fun StatusBar(editorState: EditorState) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun TextEditorPreview() {
     KotlinTextEditorTheme {
-        TextEditorApp()
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            // Preview with sample state
+            val sampleEditorState = EditorState(
+                text = "// Sample Kotlin code\nfun main() {\n    println(\"Hello, World!\")\n}",
+                language = EditorLanguage.KOTLIN,
+                filePath = "example.kt",
+                isModified = true
+            )
+            
+            Column {
+                TopAppBar(
+                    title = { Text("Kotlin Text Editor") }
+                )
+                
+                Box(modifier = Modifier.weight(1f)) {
+                    // Editor would go here
+                }
+                
+                StatusBar(
+                    editorState = sampleEditorState,
+                    uiState = TextEditorUiState(),
+                    onClearError = {},
+                    onClearStatus = {}
+                )
+            }
+        }
     }
 }

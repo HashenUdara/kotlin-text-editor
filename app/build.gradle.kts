@@ -60,6 +60,9 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.accompanist.permissions)
     
+    // ViewModel support for Compose
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
