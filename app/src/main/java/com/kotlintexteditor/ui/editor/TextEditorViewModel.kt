@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.kotlintexteditor.data.FileManager
+import com.kotlintexteditor.ui.dialogs.FileTemplate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -73,6 +74,10 @@ class TextEditor {
     val isWholeWord = searchManager.isWholeWord
     val searchResults = searchManager.searchResults
     val isSearchDialogVisible = searchManager.isDialogVisible
+    
+    // New File Dialog state
+    private val _isNewFileDialogVisible = MutableStateFlow(false)
+    val isNewFileDialogVisible: StateFlow<Boolean> = _isNewFileDialogVisible.asStateFlow()
     
     /**
      * Update editor text content
@@ -182,24 +187,64 @@ class TextEditor {
     }
     
     /**
-     * Create a new file
+     * Show new file dialog
      */
-    fun newFile() {
+    fun showNewFileDialog() {
+        _isNewFileDialogVisible.value = true
+    }
+    
+    /**
+     * Hide new file dialog
+     */
+    fun hideNewFileDialog() {
+        _isNewFileDialogVisible.value = false
+    }
+    
+    /**
+     * Create a new file with specified language and content
+     */
+    fun createNewFile(language: EditorLanguage, fileName: String, template: FileTemplate) {
+        val content = template.getContent(fileName)
+        
         _editorState.value = EditorState(
-            text = "",
-            language = EditorLanguage.KOTLIN,
-            filePath = null,
-            isModified = false
+            text = content,
+            language = language,
+            filePath = fileName,
+            isModified = true, // Mark as modified so user can save
+            wordCount = content.split(Regex("\\s+")).filter { it.isNotBlank() }.size,
+            characterCount = content.length,
+            lineCount = maxOf(1, content.count { it == '\n' } + 1)
         )
         
         _uiState.value = _uiState.value.copy(
             currentFileUri = null,
-            statusMessage = "New file created"
+            statusMessage = "New ${language.name.lowercase()} file created: $fileName"
         )
         
         // Clear undo/redo history for new file
         textOperationsManager.clearHistory()
         _selectionState.value = SelectionState()
+        
+        // Hide dialog
+        _isNewFileDialogVisible.value = false
+    }
+    
+    /**
+     * Create a new file and trigger save as dialog
+     */
+    fun createNewFileWithSaveDialog(language: EditorLanguage, fileName: String, template: FileTemplate): String {
+        // Create the file content first
+        createNewFile(language, fileName, template)
+        
+        // Return the suggested filename for the save dialog
+        return fileName
+    }
+    
+    /**
+     * Quick new file creation (for backward compatibility)
+     */
+    fun newFile() {
+        createNewFile(EditorLanguage.KOTLIN, "untitled.kt", FileTemplate.EMPTY)
     }
     
     /**

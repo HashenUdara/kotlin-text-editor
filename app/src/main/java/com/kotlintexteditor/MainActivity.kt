@@ -29,6 +29,7 @@ import com.kotlintexteditor.ui.editor.TextEditorViewModel
 import com.kotlintexteditor.ui.editor.TextEditorUiState
 import com.kotlintexteditor.ui.editor.TextOperationsToolbar
 import com.kotlintexteditor.ui.editor.FindReplaceDialog
+import com.kotlintexteditor.ui.dialogs.NewFileDialog
 import com.kotlintexteditor.ui.theme.KotlinTextEditorTheme
 
 class MainActivity : ComponentActivity() {
@@ -61,6 +62,9 @@ fun TextEditorApp() {
     val isWholeWord by viewModel.isWholeWord.collectAsState()
     val searchResults by viewModel.searchResults.collectAsState()
     val isSearchDialogVisible by viewModel.isSearchDialogVisible.collectAsState()
+    
+    // New File Dialog state
+    val isNewFileDialogVisible by viewModel.isNewFileDialogVisible.collectAsState()
     
     // File operation launchers
     val openFileLauncher = rememberLauncherForActivityResult(
@@ -99,10 +103,10 @@ fun TextEditorApp() {
                         Icon(Icons.Default.Search, contentDescription = "Find & Replace")
                     }
                     
-                    // New file button
-                    IconButton(onClick = { viewModel.newFile() }) {
-                        Icon(Icons.Default.Add, contentDescription = "New File")
-                    }
+                                    // New file button
+                IconButton(onClick = { viewModel.showNewFileDialog() }) {
+                    Icon(Icons.Default.Add, contentDescription = "New File")
+                }
                     
                                     // Open file button
                 IconButton(onClick = {
@@ -192,24 +196,37 @@ fun TextEditorApp() {
             }
         }
         
-        // Find & Replace Dialog
-        FindReplaceDialog(
-            isVisible = isSearchDialogVisible,
-            searchQuery = searchQuery,
-            replaceText = replaceText,
-            isCaseSensitive = isCaseSensitive,
-            isWholeWord = isWholeWord,
-            searchResults = searchResults,
-            onSearchQueryChange = viewModel::updateSearchQuery,
-            onReplaceTextChange = viewModel::updateReplaceText,
-            onCaseSensitiveChange = viewModel::updateCaseSensitive,
-            onWholeWordChange = viewModel::updateWholeWord,
-            onFindNext = viewModel::findNext,
-            onFindPrevious = viewModel::findPrevious,
-            onReplace = viewModel::replaceCurrent,
-            onReplaceAll = viewModel::replaceAll,
-            onClose = viewModel::hideFindReplaceDialog
-        )
+                        // Find & Replace Dialog
+                FindReplaceDialog(
+                    isVisible = isSearchDialogVisible,
+                    searchQuery = searchQuery,
+                    replaceText = replaceText,
+                    isCaseSensitive = isCaseSensitive,
+                    isWholeWord = isWholeWord,
+                    searchResults = searchResults,
+                    onSearchQueryChange = viewModel::updateSearchQuery,
+                    onReplaceTextChange = viewModel::updateReplaceText,
+                    onCaseSensitiveChange = viewModel::updateCaseSensitive,
+                    onWholeWordChange = viewModel::updateWholeWord,
+                    onFindNext = viewModel::findNext,
+                    onFindPrevious = viewModel::findPrevious,
+                    onReplace = viewModel::replaceCurrent,
+                    onReplaceAll = viewModel::replaceAll,
+                    onClose = viewModel::hideFindReplaceDialog
+                )
+                
+                // New File Dialog
+                NewFileDialog(
+                    isVisible = isNewFileDialogVisible,
+                    onDismiss = viewModel::hideNewFileDialog,
+                    onCreateFile = { language, fileName, template ->
+                        viewModel.createNewFile(language, fileName, template)
+                    },
+                    onCreateFileWithLocation = { language, fileName, template ->
+                        val suggestedFileName = viewModel.createNewFileWithSaveDialog(language, fileName, template)
+                        saveFileLauncher.launch(suggestedFileName)
+                    }
+                )
     }
 }
 
