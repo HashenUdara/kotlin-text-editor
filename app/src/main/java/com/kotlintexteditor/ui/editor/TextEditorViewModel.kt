@@ -82,6 +82,10 @@ class TextEditor {
     private val _isNewFileDialogVisible = MutableStateFlow(false)
     val isNewFileDialogVisible: StateFlow<Boolean> = _isNewFileDialogVisible.asStateFlow()
     
+    // File Browser Dialog state
+    private val _isFileBrowserDialogVisible = MutableStateFlow(false)
+    val isFileBrowserDialogVisible: StateFlow<Boolean> = _isFileBrowserDialogVisible.asStateFlow()
+    
     /**
      * Update editor text content
      */
@@ -207,6 +211,20 @@ class TextEditor {
      */
     fun hideNewFileDialog() {
         _isNewFileDialogVisible.value = false
+    }
+    
+    /**
+     * Show file browser dialog
+     */
+    fun showFileBrowserDialog() {
+        _isFileBrowserDialogVisible.value = true
+    }
+    
+    /**
+     * Hide file browser dialog
+     */
+    fun hideFileBrowserDialog() {
+        _isFileBrowserDialogVisible.value = false
     }
     
     /**

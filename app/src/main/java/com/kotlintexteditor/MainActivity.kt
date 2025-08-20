@@ -30,6 +30,7 @@ import com.kotlintexteditor.ui.editor.TextEditorUiState
 import com.kotlintexteditor.ui.editor.TextOperationsToolbar
 import com.kotlintexteditor.ui.editor.FindReplaceDialog
 import com.kotlintexteditor.ui.dialogs.NewFileDialog
+import com.kotlintexteditor.ui.dialogs.FileBrowserDialog
 import com.kotlintexteditor.ui.theme.KotlinTextEditorTheme
 
 class MainActivity : ComponentActivity() {
@@ -65,6 +66,9 @@ fun TextEditorApp() {
     
     // New File Dialog state
     val isNewFileDialogVisible by viewModel.isNewFileDialogVisible.collectAsState()
+    
+    // File Browser Dialog state
+    val isFileBrowserDialogVisible by viewModel.isFileBrowserDialogVisible.collectAsState()
     
     // File operation launchers
     val openFileLauncher = rememberLauncherForActivityResult(
@@ -103,10 +107,15 @@ fun TextEditorApp() {
                         Icon(Icons.Default.Search, contentDescription = "Find & Replace")
                     }
                     
-                                    // New file button
-                IconButton(onClick = { viewModel.showNewFileDialog() }) {
-                    Icon(Icons.Default.Add, contentDescription = "New File")
-                }
+                    // File Browser button
+                    IconButton(onClick = { viewModel.showFileBrowserDialog() }) {
+                        Icon(Icons.Default.Storage, contentDescription = "File Browser")
+                    }
+                    
+                    // New file button
+                    IconButton(onClick = { viewModel.showNewFileDialog() }) {
+                        Icon(Icons.Default.Add, contentDescription = "New File")
+                    }
                     
                                     // Open file button
                 IconButton(onClick = {
@@ -228,6 +237,24 @@ fun TextEditorApp() {
                     onCreateFileWithLocation = { language, fileName, template ->
                         val suggestedFileName = viewModel.createNewFileWithSaveDialog(language, fileName, template)
                         saveFileLauncher.launch(suggestedFileName)
+                    }
+                )
+                
+                // File Browser Dialog
+                FileBrowserDialog(
+                    isVisible = isFileBrowserDialogVisible,
+                    onDismiss = viewModel::hideFileBrowserDialog,
+                    onCreateFile = { language, fileName, template ->
+                        viewModel.createNewFile(language, fileName, template)
+                        viewModel.hideFileBrowserDialog()
+                    },
+                    onOpenFile = {
+                        if (storagePermissionState.status.isGranted) {
+                            openFileLauncher.launch(FileManager.TEXT_MIME_TYPES)
+                        } else {
+                            storagePermissionState.launchPermissionRequest()
+                        }
+                        viewModel.hideFileBrowserDialog()
                     }
                 )
     }
