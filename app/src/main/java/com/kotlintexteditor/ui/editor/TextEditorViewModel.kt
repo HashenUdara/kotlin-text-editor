@@ -14,6 +14,7 @@ class TextEditorViewModel(application: Application) : AndroidViewModel(applicati
     
     private val fileManager = FileManager(application)
     private val textOperationsManager = TextOperationsManager(application)
+    private val searchManager = SearchManager()
     
     // Editor state
     private val _editorState = MutableStateFlow(
@@ -65,6 +66,14 @@ class TextEditor {
     private val _selectionState = MutableStateFlow(SelectionState())
     val selectionState: StateFlow<SelectionState> = _selectionState.asStateFlow()
     
+    // Search state
+    val searchQuery = searchManager.searchQuery
+    val replaceText = searchManager.replaceText
+    val isCaseSensitive = searchManager.isCaseSensitive
+    val isWholeWord = searchManager.isWholeWord
+    val searchResults = searchManager.searchResults
+    val isSearchDialogVisible = searchManager.isDialogVisible
+    
     /**
      * Update editor text content
      */
@@ -89,6 +98,9 @@ class TextEditor {
         )
         
         _editorState.value = updatedState
+        
+        // Update search manager with new text
+        searchManager.updateText(newText)
         
         // Schedule auto-save if file exists
         scheduleAutoSave()
@@ -374,6 +386,148 @@ class TextEditor {
      */
     fun hasSelection(): Boolean {
         return _selectionState.value.hasSelection
+    }
+    
+    // Search and Replace Operations
+    
+    /**
+     * Show find and replace dialog
+     */
+    fun showFindReplaceDialog() {
+        searchManager.showDialog()
+    }
+    
+    /**
+     * Hide find and replace dialog
+     */
+    fun hideFindReplaceDialog() {
+        searchManager.hideDialog()
+    }
+    
+    /**
+     * Update search query
+     */
+    fun updateSearchQuery(query: String) {
+        searchManager.updateSearchQuery(query, _editorState.value.text)
+    }
+    
+    /**
+     * Update replace text
+     */
+    fun updateReplaceText(replace: String) {
+        searchManager.updateReplaceText(replace)
+    }
+    
+    /**
+     * Update case sensitivity
+     */
+    fun updateCaseSensitive(caseSensitive: Boolean) {
+        searchManager.updateCaseSensitive(caseSensitive)
+    }
+    
+    /**
+     * Update whole word matching
+     */
+    fun updateWholeWord(wholeWord: Boolean) {
+        searchManager.updateWholeWord(wholeWord)
+    }
+    
+    /**
+     * Find next match
+     */
+    fun findNext() {
+        val result = searchManager.findNext()
+        when (result) {
+            is SearchResult.Found -> {
+                updateSelection(result.match.startIndex, result.match.endIndex)
+                _uiState.value = _uiState.value.copy(
+                    statusMessage = "Match ${result.position} of ${result.total}"
+                )
+            }
+            is SearchResult.NotFound -> {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = result.message
+                )
+            }
+        }
+    }
+    
+    /**
+     * Find previous match
+     */
+    fun findPrevious() {
+        val result = searchManager.findPrevious()
+        when (result) {
+            is SearchResult.Found -> {
+                updateSelection(result.match.startIndex, result.match.endIndex)
+                _uiState.value = _uiState.value.copy(
+                    statusMessage = "Match ${result.position} of ${result.total}"
+                )
+            }
+            is SearchResult.NotFound -> {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = result.message
+                )
+            }
+        }
+    }
+    
+    /**
+     * Replace current match
+     */
+    fun replaceCurrent() {
+        val result = searchManager.replaceCurrent()
+        when (result) {
+            is ReplaceResult.Success -> {
+                updateText(result.newText, saveToHistory = true)
+                updateSelection(result.newCursorPosition, result.newCursorPosition)
+                _uiState.value = _uiState.value.copy(
+                    statusMessage = "Replaced \"${result.replacedText}\""
+                )
+            }
+            is ReplaceResult.Error -> {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = result.message
+                )
+            }
+        }
+    }
+    
+    /**
+     * Replace all matches
+     */
+    fun replaceAll() {
+        val result = searchManager.replaceAll()
+        when (result) {
+            is ReplaceResult.Success -> {
+                updateText(result.newText, saveToHistory = true)
+                updateSelection(result.newCursorPosition, result.newCursorPosition)
+                _uiState.value = _uiState.value.copy(
+                    statusMessage = "Replaced ${result.total} matches"
+                )
+                // Clear search after replace all
+                searchManager.clearSearch()
+            }
+            is ReplaceResult.Error -> {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = result.message
+                )
+            }
+        }
+    }
+    
+    /**
+     * Clear search
+     */
+    fun clearSearch() {
+        searchManager.clearSearch()
+    }
+    
+    /**
+     * Get current search match for highlighting
+     */
+    fun getCurrentSearchMatch(): SearchMatch? {
+        return searchManager.getCurrentMatch()
     }
 }
 

@@ -28,6 +28,7 @@ import com.kotlintexteditor.ui.editor.EditorState
 import com.kotlintexteditor.ui.editor.TextEditorViewModel
 import com.kotlintexteditor.ui.editor.TextEditorUiState
 import com.kotlintexteditor.ui.editor.TextOperationsToolbar
+import com.kotlintexteditor.ui.editor.FindReplaceDialog
 import com.kotlintexteditor.ui.theme.KotlinTextEditorTheme
 
 class MainActivity : ComponentActivity() {
@@ -52,6 +53,14 @@ fun TextEditorApp() {
     val canUndo by viewModel.canUndo.collectAsState()
     val canRedo by viewModel.canRedo.collectAsState()
     val canPaste by viewModel.canPaste.collectAsState()
+    
+    // Search state
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val replaceText by viewModel.replaceText.collectAsState()
+    val isCaseSensitive by viewModel.isCaseSensitive.collectAsState()
+    val isWholeWord by viewModel.isWholeWord.collectAsState()
+    val searchResults by viewModel.searchResults.collectAsState()
+    val isSearchDialogVisible by viewModel.isSearchDialogVisible.collectAsState()
     
     // File operation launchers
     val openFileLauncher = rememberLauncherForActivityResult(
@@ -85,6 +94,11 @@ fun TextEditorApp() {
                     }
                 },
                 actions = {
+                    // Find & Replace button
+                    IconButton(onClick = { viewModel.showFindReplaceDialog() }) {
+                        Icon(Icons.Default.Search, contentDescription = "Find & Replace")
+                    }
+                    
                     // New file button
                     IconButton(onClick = { viewModel.newFile() }) {
                         Icon(Icons.Default.Add, contentDescription = "New File")
@@ -173,6 +187,25 @@ fun TextEditorApp() {
                 )
             }
         }
+        
+        // Find & Replace Dialog
+        FindReplaceDialog(
+            isVisible = isSearchDialogVisible,
+            searchQuery = searchQuery,
+            replaceText = replaceText,
+            isCaseSensitive = isCaseSensitive,
+            isWholeWord = isWholeWord,
+            searchResults = searchResults,
+            onSearchQueryChange = viewModel::updateSearchQuery,
+            onReplaceTextChange = viewModel::updateReplaceText,
+            onCaseSensitiveChange = viewModel::updateCaseSensitive,
+            onWholeWordChange = viewModel::updateWholeWord,
+            onFindNext = viewModel::findNext,
+            onFindPrevious = viewModel::findPrevious,
+            onReplace = viewModel::replaceCurrent,
+            onReplaceAll = viewModel::replaceAll,
+            onClose = viewModel::hideFindReplaceDialog
+        )
     }
 }
 
