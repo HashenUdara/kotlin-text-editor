@@ -59,19 +59,20 @@ fun NewFileDialog(
     ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth(0.95f)
+                .fillMaxWidth(0.92f)
                 .wrapContentHeight()
-                .padding(16.dp),
-            shape = RoundedCornerShape(28.dp),
+                .padding(12.dp),
+            shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp
+            tonalElevation = 8.dp,
+            shadowElevation = 4.dp
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 // Header Section
                 DialogHeader()
@@ -112,23 +113,23 @@ fun NewFileDialog(
 private fun DialogHeader() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Icon(
             imageVector = Icons.Outlined.NoteAdd,
             contentDescription = null,
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(40.dp),
             tint = MaterialTheme.colorScheme.primary
         )
         Text(
             text = "Create New File",
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
             text = "Choose file type, name, and template",
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
@@ -141,7 +142,7 @@ private fun LanguageSelectionSection(
     onLanguageSelect: (EditorLanguage) -> Unit
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         SectionTitle(
             title = "File Type",
@@ -150,7 +151,7 @@ private fun LanguageSelectionSection(
         
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             LanguageCard(
                 language = EditorLanguage.KOTLIN,
@@ -195,7 +196,7 @@ private fun FileNameSection(
     onFileNameChange: (String) -> Unit
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         SectionTitle(
             title = "File Name",
@@ -205,7 +206,7 @@ private fun FileNameSection(
         OutlinedTextField(
             value = fileName,
             onValueChange = onFileNameChange,
-            label = { Text("Enter file name") },
+            label = { Text("Enter file name", style = MaterialTheme.typography.bodyMedium) },
             leadingIcon = {
                 Icon(
                     imageVector = when (selectedLanguage) {
@@ -214,6 +215,7 @@ private fun FileNameSection(
                         EditorLanguage.PLAIN_TEXT -> Icons.Outlined.TextSnippet
                     },
                     contentDescription = null,
+                    modifier = Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
             },
@@ -225,14 +227,16 @@ private fun FileNameSection(
                         EditorLanguage.KOTLIN -> "MainActivity.kt"
                         EditorLanguage.JAVA -> "MainActivity.java"
                         EditorLanguage.PLAIN_TEXT -> "document.txt"
-                    }
+                    },
+                    style = MaterialTheme.typography.bodyMedium
                 ) 
             },
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = MaterialTheme.colorScheme.outline
-            )
+            ),
+            textStyle = MaterialTheme.typography.bodyMedium
         )
     }
 }
@@ -244,7 +248,7 @@ private fun TemplateSelectionSection(
     onTemplateSelect: (FileTemplate) -> Unit
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         SectionTitle(
             title = "Template",
@@ -273,27 +277,27 @@ private fun ActionButtonsSection(
     onCreateFileWithLocation: () -> Unit
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         HorizontalDivider(
-            color = MaterialTheme.colorScheme.outlineVariant,
-            thickness = 1.dp
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
+            thickness = 0.5.dp
         )
         
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // Cancel Button
             OutlinedButton(
                 onClick = onDismiss,
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp),
-                contentPadding = PaddingValues(vertical = 16.dp)
+                shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(vertical = 14.dp)
             ) {
                 Text(
                     text = "Cancel",
-                    style = MaterialTheme.typography.labelLarge
+                    style = MaterialTheme.typography.labelMedium
                 )
             }
             
@@ -302,8 +306,8 @@ private fun ActionButtonsSection(
                 onClick = onCreateFile,
                 enabled = fileName.isNotBlank(),
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp),
-                contentPadding = PaddingValues(vertical = 16.dp),
+                shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(vertical = 14.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary
                 )
@@ -311,12 +315,12 @@ private fun ActionButtonsSection(
                 Icon(
                     imageVector = Icons.Outlined.Create,
                     contentDescription = null,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(18.dp)
                 )
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(6.dp))
                 Text(
                     text = "Create",
-                    style = MaterialTheme.typography.labelLarge
+                    style = MaterialTheme.typography.labelMedium
                 )
             }
         }
@@ -326,8 +330,8 @@ private fun ActionButtonsSection(
             onClick = onCreateFileWithLocation,
             enabled = fileName.isNotBlank(),
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            contentPadding = PaddingValues(vertical = 16.dp),
+            shape = RoundedCornerShape(12.dp),
+            contentPadding = PaddingValues(vertical = 14.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.secondary
             )
@@ -335,12 +339,12 @@ private fun ActionButtonsSection(
             Icon(
                 imageVector = Icons.Outlined.SaveAs,
                 contentDescription = null,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(18.dp)
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(6.dp))
             Text(
                 text = "Create & Save As...",
-                style = MaterialTheme.typography.labelLarge
+                style = MaterialTheme.typography.labelMedium
             )
         }
     }
@@ -353,18 +357,18 @@ private fun SectionTitle(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(18.dp),
             tint = MaterialTheme.colorScheme.primary
         )
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurface
         )
     }
@@ -395,12 +399,12 @@ private fun LanguageCard(
 
     Surface(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(12.dp))
             .clickable { onSelect() },
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         color = backgroundColor,
         border = BorderStroke(
-            width = if (selected) 2.dp else 1.dp,
+            width = if (selected) 1.5.dp else 0.8.dp,
             color = borderColor
         ),
         contentColor = MaterialTheme.colorScheme.onSurface
@@ -408,26 +412,26 @@ private fun LanguageCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(28.dp),
                 tint = if (selected) color else MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelMedium,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                 color = if (selected) color else MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
             )
         }
     }
@@ -440,7 +444,7 @@ private fun LazyTemplateGrid(
     onTemplateSelect: (FileTemplate) -> Unit
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         templates.forEach { template ->
             TemplateCard(
@@ -481,13 +485,14 @@ private fun TemplateCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             RadioButton(
                 selected = selected,
                 onClick = null,
+                modifier = Modifier.size(20.dp),
                 colors = RadioButtonDefaults.colors(
                     selectedColor = MaterialTheme.colorScheme.primary
                 )
@@ -495,11 +500,11 @@ private fun TemplateCard(
             
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
                     text = template.displayName,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                     color = if (selected) {
                         MaterialTheme.colorScheme.onPrimaryContainer
