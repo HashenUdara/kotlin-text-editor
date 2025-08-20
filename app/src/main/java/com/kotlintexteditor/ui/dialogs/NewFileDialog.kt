@@ -1,23 +1,28 @@
 package com.kotlintexteditor.ui.dialogs
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.kotlintexteditor.ui.editor.EditorLanguage
 
 /**
- * Enhanced New File Dialog with language selection, filename input, and location picker
+ * Modern Material Design 3 New File Dialog
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,229 +49,380 @@ fun NewFileDialog(
         }
     }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    ) {
+        Surface(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.95f)
+                .wrapContentHeight()
                 .padding(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                // Dialog Title
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = "Create New File",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Divider()
-
-                // Language Selection
-                Text(
-                    text = "File Type",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                // Header Section
+                DialogHeader()
+                
+                // Content Sections
+                LanguageSelectionSection(
+                    selectedLanguage = selectedLanguage,
+                    onLanguageSelect = { selectedLanguage = it }
                 )
-
-                Column(
-                    modifier = Modifier.selectableGroup(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    LanguageOption(
-                        language = EditorLanguage.KOTLIN,
-                        icon = Icons.Default.Code,
-                        title = "Kotlin File",
-                        description = "Kotlin source code (.kt)",
-                        selected = selectedLanguage == EditorLanguage.KOTLIN,
-                        onSelect = { selectedLanguage = EditorLanguage.KOTLIN }
-                    )
-
-                    LanguageOption(
-                        language = EditorLanguage.JAVA,
-                        icon = Icons.Default.Code,
-                        title = "Java File",
-                        description = "Java source code (.java)",
-                        selected = selectedLanguage == EditorLanguage.JAVA,
-                        onSelect = { selectedLanguage = EditorLanguage.JAVA }
-                    )
-
-                    LanguageOption(
-                        language = EditorLanguage.PLAIN_TEXT,
-                        icon = Icons.Default.TextSnippet,
-                        title = "Text File",
-                        description = "Plain text file (.txt)",
-                        selected = selectedLanguage == EditorLanguage.PLAIN_TEXT,
-                        onSelect = { selectedLanguage = EditorLanguage.PLAIN_TEXT }
-                    )
-                }
-
-                // File Name Input
-                Text(
-                    text = "File Name",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                
+                FileNameSection(
+                    fileName = fileName,
+                    selectedLanguage = selectedLanguage,
+                    onFileNameChange = { fileName = it }
                 )
-
-                OutlinedTextField(
-                    value = fileName,
-                    onValueChange = { fileName = it },
-                    label = { Text("Enter file name") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = when (selectedLanguage) {
-                                EditorLanguage.KOTLIN -> Icons.Default.Code
-                                EditorLanguage.JAVA -> Icons.Default.DataObject
-                                EditorLanguage.PLAIN_TEXT -> Icons.Default.TextSnippet
-                            },
-                            contentDescription = null
-                        )
-                    },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("e.g., MainActivity.kt") }
-                )
-
-                // Template Selection
+                
                 if (selectedLanguage != EditorLanguage.PLAIN_TEXT) {
-                    Text(
-                        text = "Template",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
+                    TemplateSelectionSection(
+                        selectedLanguage = selectedLanguage,
+                        selectedTemplate = selectedTemplate,
+                        onTemplateSelect = { selectedTemplate = it }
                     )
-
-                    val templates = when (selectedLanguage) {
-                        EditorLanguage.KOTLIN -> FileTemplate.kotlinTemplates
-                        EditorLanguage.JAVA -> FileTemplate.javaTemplates
-                        else -> listOf(FileTemplate.EMPTY)
-                    }
-
-                    Column(
-                        modifier = Modifier.selectableGroup(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        templates.forEach { template ->
-                            TemplateOption(
-                                template = template,
-                                selected = selectedTemplate == template,
-                                onSelect = { selectedTemplate = template }
-                            )
-                        }
-                    }
                 }
-
-                Divider()
-
+                
                 // Action Buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Cancel Button
-                    OutlinedButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Cancel")
-                    }
-
-                    // Create in Memory Button
-                    Button(
-                        onClick = {
-                            if (fileName.isNotBlank()) {
-                                onCreateFile(selectedLanguage, fileName, selectedTemplate)
-                            }
-                        },
-                        enabled = fileName.isNotBlank(),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Create,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text("Create")
-                    }
-
-                    // Create and Save Button
-                    Button(
-                        onClick = {
-                            if (fileName.isNotBlank()) {
-                                onCreateFileWithLocation(selectedLanguage, fileName, selectedTemplate)
-                            }
-                        },
-                        enabled = fileName.isNotBlank(),
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Save,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text("Save As")
-                    }
-                }
+                ActionButtonsSection(
+                    fileName = fileName,
+                    onDismiss = onDismiss,
+                    onCreateFile = { onCreateFile(selectedLanguage, fileName, selectedTemplate) },
+                    onCreateFileWithLocation = { onCreateFileWithLocation(selectedLanguage, fileName, selectedTemplate) }
+                )
             }
         }
     }
 }
 
 @Composable
-private fun LanguageOption(
+private fun DialogHeader() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.NoteAdd,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = "Create New File",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = "Choose file type, name, and template",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+private fun LanguageSelectionSection(
+    selectedLanguage: EditorLanguage,
+    onLanguageSelect: (EditorLanguage) -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        SectionTitle(
+            title = "File Type",
+            icon = Icons.Outlined.Category
+        )
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            LanguageCard(
+                language = EditorLanguage.KOTLIN,
+                icon = Icons.Outlined.Code,
+                title = "Kotlin",
+                description = ".kt",
+                color = MaterialTheme.colorScheme.primary,
+                selected = selectedLanguage == EditorLanguage.KOTLIN,
+                modifier = Modifier.weight(1f),
+                onSelect = { onLanguageSelect(EditorLanguage.KOTLIN) }
+            )
+            
+            LanguageCard(
+                language = EditorLanguage.JAVA,
+                icon = Icons.Outlined.DataObject,
+                title = "Java",
+                description = ".java",
+                color = MaterialTheme.colorScheme.tertiary,
+                selected = selectedLanguage == EditorLanguage.JAVA,
+                modifier = Modifier.weight(1f),
+                onSelect = { onLanguageSelect(EditorLanguage.JAVA) }
+            )
+            
+            LanguageCard(
+                language = EditorLanguage.PLAIN_TEXT,
+                icon = Icons.Outlined.TextSnippet,
+                title = "Text",
+                description = ".txt",
+                color = MaterialTheme.colorScheme.secondary,
+                selected = selectedLanguage == EditorLanguage.PLAIN_TEXT,
+                modifier = Modifier.weight(1f),
+                onSelect = { onLanguageSelect(EditorLanguage.PLAIN_TEXT) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun FileNameSection(
+    fileName: String,
+    selectedLanguage: EditorLanguage,
+    onFileNameChange: (String) -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        SectionTitle(
+            title = "File Name",
+            icon = Icons.Outlined.DriveFileRenameOutline
+        )
+        
+        OutlinedTextField(
+            value = fileName,
+            onValueChange = onFileNameChange,
+            label = { Text("Enter file name") },
+            leadingIcon = {
+                Icon(
+                    imageVector = when (selectedLanguage) {
+                        EditorLanguage.KOTLIN -> Icons.Outlined.Code
+                        EditorLanguage.JAVA -> Icons.Outlined.DataObject
+                        EditorLanguage.PLAIN_TEXT -> Icons.Outlined.TextSnippet
+                    },
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { 
+                Text(
+                    when (selectedLanguage) {
+                        EditorLanguage.KOTLIN -> "MainActivity.kt"
+                        EditorLanguage.JAVA -> "MainActivity.java"
+                        EditorLanguage.PLAIN_TEXT -> "document.txt"
+                    }
+                ) 
+            },
+            shape = RoundedCornerShape(16.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+            )
+        )
+    }
+}
+
+@Composable
+private fun TemplateSelectionSection(
+    selectedLanguage: EditorLanguage,
+    selectedTemplate: FileTemplate,
+    onTemplateSelect: (FileTemplate) -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        SectionTitle(
+            title = "Template",
+            icon = Icons.Outlined.Inventory
+        )
+        
+        val templates = when (selectedLanguage) {
+            EditorLanguage.KOTLIN -> FileTemplate.kotlinTemplates
+            EditorLanguage.JAVA -> FileTemplate.javaTemplates
+            else -> listOf(FileTemplate.EMPTY)
+        }
+        
+        LazyTemplateGrid(
+            templates = templates,
+            selectedTemplate = selectedTemplate,
+            onTemplateSelect = onTemplateSelect
+        )
+    }
+}
+
+@Composable
+private fun ActionButtonsSection(
+    fileName: String,
+    onDismiss: () -> Unit,
+    onCreateFile: () -> Unit,
+    onCreateFileWithLocation: () -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        HorizontalDivider(
+            color = MaterialTheme.colorScheme.outlineVariant,
+            thickness = 1.dp
+        )
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Cancel Button
+            OutlinedButton(
+                onClick = onDismiss,
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(16.dp),
+                contentPadding = PaddingValues(vertical = 16.dp)
+            ) {
+                Text(
+                    text = "Cancel",
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+            
+            // Create Button
+            Button(
+                onClick = onCreateFile,
+                enabled = fileName.isNotBlank(),
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(16.dp),
+                contentPadding = PaddingValues(vertical = 16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Create,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "Create",
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+        }
+        
+        // Save As Button (Full Width)
+        Button(
+            onClick = onCreateFileWithLocation,
+            enabled = fileName.isNotBlank(),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            contentPadding = PaddingValues(vertical = 16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondary
+            )
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.SaveAs,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = "Create & Save As...",
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(
+    title: String,
+    icon: ImageVector
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+@Composable
+private fun LanguageCard(
     language: EditorLanguage,
     icon: ImageVector,
     title: String,
     description: String,
+    color: androidx.compose.ui.graphics.Color,
     selected: Boolean,
+    modifier: Modifier = Modifier,
     onSelect: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .selectable(
-                selected = selected,
-                onClick = onSelect,
-                role = Role.RadioButton
-            )
-            .padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    val backgroundColor = if (selected) {
+        color.copy(alpha = 0.12f)
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+    }
+    
+    val borderColor = if (selected) {
+        color
+    } else {
+        MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+    }
+
+    Surface(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable { onSelect() },
+        shape = RoundedCornerShape(16.dp),
+        color = backgroundColor,
+        border = BorderStroke(
+            width = if (selected) 2.dp else 1.dp,
+            color = borderColor
+        ),
+        contentColor = MaterialTheme.colorScheme.onSurface
     ) {
-        RadioButton(
-            selected = selected,
-            onClick = null
-        )
-
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Column(modifier = Modifier.weight(1f)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = if (selected) color else MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                color = if (selected) color else MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = description,
@@ -278,44 +434,96 @@ private fun LanguageOption(
 }
 
 @Composable
-private fun TemplateOption(
+private fun LazyTemplateGrid(
+    templates: List<FileTemplate>,
+    selectedTemplate: FileTemplate,
+    onTemplateSelect: (FileTemplate) -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        templates.forEach { template ->
+            TemplateCard(
+                template = template,
+                selected = selectedTemplate == template,
+                onSelect = { onTemplateSelect(template) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun TemplateCard(
     template: FileTemplate,
     selected: Boolean,
     onSelect: () -> Unit
 ) {
-    Row(
+    val backgroundColor = if (selected) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+    }
+
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .selectable(
-                selected = selected,
-                onClick = onSelect,
-                role = Role.RadioButton
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { onSelect() },
+        shape = RoundedCornerShape(12.dp),
+        color = backgroundColor,
+        border = if (selected) {
+            BorderStroke(
+                width = 2.dp,
+                color = MaterialTheme.colorScheme.primary
             )
-            .padding(vertical = 4.dp, horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        } else null
     ) {
-        RadioButton(
-            selected = selected,
-            onClick = null
-        )
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = template.displayName,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
-            )
-            if (template.description.isNotEmpty()) {
-                Text(
-                    text = template.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            RadioButton(
+                selected = selected,
+                onClick = null,
+                colors = RadioButtonDefaults.colors(
+                    selectedColor = MaterialTheme.colorScheme.primary
                 )
+            )
+            
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = template.displayName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                    color = if (selected) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+                if (template.description.isNotEmpty()) {
+                    Text(
+                        text = template.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (selected) {
+                            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        }
+                    )
+                }
             }
         }
     }
 }
+
+
 
 /**
  * File templates for different languages
