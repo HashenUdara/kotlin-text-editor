@@ -191,6 +191,9 @@ fun TextEditorApp() {
                     language = editorState.language,
                     onTextChanged = { newText ->
                         viewModel.updateText(newText)
+                    },
+                    onSelectionChanged = { start, end ->
+                        viewModel.updateSelection(start, end)
                     }
                 )
             }

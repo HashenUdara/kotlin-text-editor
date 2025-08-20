@@ -6,6 +6,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 
+import io.github.rosemoe.sora.event.ContentChangeEvent
+import io.github.rosemoe.sora.event.SelectionChangeEvent
 import io.github.rosemoe.sora.widget.CodeEditor
 import io.github.rosemoe.sora.widget.component.Magnifier
 import io.github.rosemoe.sora.widget.schemes.EditorColorScheme
@@ -16,33 +18,51 @@ fun CodeEditorView(
     initialText: String = "",
     language: EditorLanguage = EditorLanguage.KOTLIN,
     onTextChanged: (String) -> Unit = {},
+    onSelectionChanged: (Int, Int) -> Unit = { _, _ -> },
     isReadOnly: Boolean = false
 ) {
     val context = LocalContext.current
-    var editor by remember { mutableStateOf<CodeEditor?>(null) }
+    val codeEditor = remember { CodeEditor(context) }
+
+    DisposableEffect(codeEditor, language) {
+        setupEditor(codeEditor, language, isReadOnly)
+        onDispose {
+            // Clean up resources if necessary
+        }
+    }
+
+    // Update editor text when initialText changes from outside
+    LaunchedEffect(initialText) {
+        if (codeEditor.text.toString() != initialText) {
+            codeEditor.setText(initialText)
+        }
+    }
 
     AndroidView(
-        factory = { ctx ->
-            CodeEditor(ctx).apply {
-                // Configure the editor
-                setupEditor(this, language, isReadOnly)
+        modifier = modifier,
+        factory = {
+            codeEditor.apply {
+                // Set up text change listener
+                subscribeEvent(ContentChangeEvent::class.java) { event, unsubscribe ->
+                    val newText = codeEditor.text.toString()
+                    onTextChanged(newText)
+                }
+                
+                // Set up selection change listener
+                subscribeEvent(SelectionChangeEvent::class.java) { event, unsubscribe ->
+                    val startIndex = codeEditor.text.getCharIndex(event.left.line, event.left.column)
+                    val endIndex = codeEditor.text.getCharIndex(event.right.line, event.right.column)
+                    onSelectionChanged(startIndex, endIndex)
+                }
+                
+                // Set initial text
                 setText(initialText)
-                editor = this
             }
         },
-        modifier = modifier,
-        update = { codeEditor ->
+        update = { editor ->
             // Update editor when composable recomposes
-            if (codeEditor.text.toString() != initialText) {
-                codeEditor.setText(initialText)
-            }
-            
-            // Set up text change listener - will implement this later when we have proper API documentation
-            // For now, we'll update on explicit user actions
-            try {
-                // Basic event handling - this might need adjustment based on actual Sora Editor API
-            } catch (e: Exception) {
-                // Handle any API differences gracefully
+            if (editor.text.toString() != initialText) {
+                editor.setText(initialText)
             }
         }
     )

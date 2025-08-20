@@ -17,6 +17,9 @@ class TextEditorViewModel(application: Application) : AndroidViewModel(applicati
     private val textOperationsManager = TextOperationsManager(application)
     private val searchManager = SearchManager()
     
+    // Track the original content when a file is opened for comparison
+    private var originalFileContent: String = ""
+    
     // Editor state
     private val _editorState = MutableStateFlow(
         EditorState(
@@ -98,7 +101,7 @@ class TextEditor {
             text = newText,
             filePath = currentState.filePath
         ).copy(
-            isModified = newText != currentState.text || currentState.isModified,
+            isModified = newText != originalFileContent,
             language = currentState.language
         )
         
@@ -129,6 +132,9 @@ class TextEditor {
             
             if (result.success) {
                 val language = result.fileName.getFileExtension()
+                
+                // Store the original content for comparison
+                originalFileContent = result.content
                 
                 _editorState.value = EditorState.fromText(
                     text = result.content,
@@ -171,6 +177,9 @@ class TextEditor {
             val result = fileManager.writeFile(targetUri, _editorState.value.text)
             
             if (result.success) {
+                // Update the original content since file is now saved
+                originalFileContent = _editorState.value.text
+                
                 _editorState.value = _editorState.value.copy(isModified = false)
                 _uiState.value = _uiState.value.copy(
                     isSaving = false,
@@ -203,14 +212,17 @@ class TextEditor {
     /**
      * Create a new file with specified language and content
      */
-    fun createNewFile(language: EditorLanguage, fileName: String, template: FileTemplate) {
+        fun createNewFile(language: EditorLanguage, fileName: String, template: FileTemplate) {
         val content = template.getContent(fileName)
-        
+
+        // Set original content as empty for new files (so any content is considered modified)
+        originalFileContent = ""
+
         _editorState.value = EditorState(
             text = content,
             language = language,
             filePath = fileName,
-            isModified = true, // Mark as modified so user can save
+            isModified = content.isNotEmpty(), // Mark as modified if template has content
             wordCount = content.split(Regex("\\s+")).filter { it.isNotBlank() }.size,
             characterCount = content.length,
             lineCount = maxOf(1, content.count { it == '\n' } + 1)
@@ -244,6 +256,8 @@ class TextEditor {
      * Quick new file creation (for backward compatibility)
      */
     fun newFile() {
+        // Set original content as empty for new files
+        originalFileContent = ""
         createNewFile(EditorLanguage.KOTLIN, "untitled.kt", FileTemplate.EMPTY)
     }
     
