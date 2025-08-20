@@ -49,32 +49,21 @@ fun CodeEditorView(
 }
 
 private fun setupEditor(editor: CodeEditor, language: EditorLanguage, isReadOnly: Boolean) {
-    // For now, we'll use a basic text language
-    // Later we'll add proper syntax highlighting
-    editor.setEditorLanguage(null) // Use default text editor language
-    
-    // Configure editor settings
-    editor.apply {
-        isEditable = !isReadOnly
-        
-        // Enable features
-        getComponent(Magnifier::class.java).isEnabled = true
-        
-        // Configure appearance
-        setLineNumberEnabled(true)
-        setWordwrap(false)
-        
-        // Set color scheme (basic configuration)
-        colorScheme = EditorColorScheme().apply {
-            // We'll configure colors properly later when we add proper theme support
+    // Configure editor based on language type
+    when (language) {
+        EditorLanguage.KOTLIN -> {
+            EditorConfigUtils.configureForKotlin(editor)
         }
-        
-        // Configure text size
-        setTextSize(14f)
-        
-        // Configure cursor
-        setCursorBlinkPeriod(500)
+        EditorLanguage.JAVA -> {
+            EditorConfigUtils.configureForJava(editor)
+        }
+        else -> {
+            EditorConfigUtils.configureForPlainText(editor)
+        }
     }
+    
+    // Set read-only mode if needed
+    editor.isEditable = !isReadOnly
 }
 
 enum class EditorLanguage {

@@ -31,6 +31,8 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        // Enable core library desugaring
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -54,6 +56,9 @@ dependencies {
     // Text Editor Dependencies
     implementation(libs.sora.editor.core)
     
+    // Enhanced syntax highlighting (simplified approach)
+    // implementation("io.github.Rosemoe.sora-editor:language-textmate:0.23.4")
+    
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.documentfile)
@@ -62,6 +67,9 @@ dependencies {
     
     // ViewModel support for Compose
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    
+    // Core library desugaring
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
