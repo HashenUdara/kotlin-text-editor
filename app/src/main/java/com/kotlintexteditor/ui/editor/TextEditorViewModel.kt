@@ -123,8 +123,7 @@ class TextEditor {
             val result = fileManager.readFile(uri)
             
             if (result.success) {
-                val extension = fileManager.getFileExtension(uri)
-                val language = extension.getFileExtension()
+                val language = result.fileName.getFileExtension()
                 
                 _editorState.value = EditorState.fromText(
                     text = result.content,

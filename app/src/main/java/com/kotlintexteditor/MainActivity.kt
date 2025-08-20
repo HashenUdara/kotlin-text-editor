@@ -21,7 +21,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.kotlintexteditor.data.FilePickerContracts
+import com.kotlintexteditor.data.FileManager
 import com.kotlintexteditor.ui.editor.CodeEditorView
 import com.kotlintexteditor.ui.editor.EditorLanguage
 import com.kotlintexteditor.ui.editor.EditorState
@@ -64,13 +64,13 @@ fun TextEditorApp() {
     
     // File operation launchers
     val openFileLauncher = rememberLauncherForActivityResult(
-        contract = FilePickerContracts.createOpenFileContract()
+        contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let { viewModel.openFile(it) }
     }
     
     val saveFileLauncher = rememberLauncherForActivityResult(
-        contract = FilePickerContracts.createNewFileContract()
+        contract = ActivityResultContracts.CreateDocument("*/*")
     ) { uri ->
         uri?.let { viewModel.saveFile(it) }
     }
@@ -104,25 +104,29 @@ fun TextEditorApp() {
                         Icon(Icons.Default.Add, contentDescription = "New File")
                     }
                     
-                    // Open file button
-                    IconButton(onClick = { 
-                        if (storagePermissionState.status.isGranted) {
-                            openFileLauncher.launch(arrayOf("*/*"))
-                        } else {
-                            storagePermissionState.launchPermissionRequest()
-                        }
-                    }) {
+                                    // Open file button
+                IconButton(onClick = {
+                    if (storagePermissionState.status.isGranted) {
+                        openFileLauncher.launch(FileManager.TEXT_MIME_TYPES)
+                    } else {
+                        storagePermissionState.launchPermissionRequest()
+                    }
+                }) {
                         Icon(Icons.Default.FolderOpen, contentDescription = "Open File")
                     }
                     
                     // Save file button
-                    IconButton(
-                        onClick = { 
+                                        IconButton(
+                        onClick = {
                             if (uiState.currentFileUri != null) {
                                 viewModel.saveFile()
                             } else {
-                                // Save as new file
-                                val fileName = "${viewModel.getCurrentFileName()}"
+                                // Save as new file - determine extension based on language
+                                val fileName = when (editorState.language) {
+                                    EditorLanguage.KOTLIN -> "untitled.kt"
+                                    EditorLanguage.JAVA -> "untitled.java"
+                                    else -> "untitled.txt"
+                                }
                                 saveFileLauncher.launch(fileName)
                             }
                         },

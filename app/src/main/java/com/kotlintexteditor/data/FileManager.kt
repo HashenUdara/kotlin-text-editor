@@ -1,10 +1,7 @@
 package com.kotlintexteditor.data
 
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.documentfile.provider.DocumentFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -156,40 +153,4 @@ class FileManager(private val context: Context) {
     }
 }
 
-/**
- * File picker contracts for easier integration with Compose
- */
-object FilePickerContracts {
-    
-    /**
-     * Contract for opening a file
-     */
-    fun createOpenFileContract() = ActivityResultContracts.OpenDocument()
-    
-    /**
-     * Contract for creating a new file
-     */
-    fun createNewFileContract() = ActivityResultContracts.CreateDocument("text/plain")
-    
-    /**
-     * Create intent for opening files
-     */
-    fun createOpenFileIntent(): Intent {
-        return Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "*/*"
-            putExtra(Intent.EXTRA_MIME_TYPES, FileManager.TEXT_MIME_TYPES)
-        }
-    }
-    
-    /**
-     * Create intent for creating new file
-     */
-    fun createNewFileIntent(fileName: String = "untitled.txt"): Intent {
-        return Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TITLE, fileName)
-        }
-    }
-}
+
