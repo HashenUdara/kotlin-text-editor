@@ -56,8 +56,8 @@ dependencies {
     // Text Editor Dependencies
     implementation(libs.sora.editor.core)
     
-    // Enhanced syntax highlighting (simplified approach)
-    // implementation("io.github.Rosemoe.sora-editor:language-textmate:0.23.4")
+    // Enhanced syntax highlighting (try built-in languages)
+    implementation("io.github.Rosemoe.sora-editor:language-java:0.23.4")
     
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)

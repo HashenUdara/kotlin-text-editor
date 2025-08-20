@@ -4,9 +4,9 @@ import io.github.rosemoe.sora.lang.EmptyLanguage
 import io.github.rosemoe.sora.widget.schemes.EditorColorScheme
 
 /**
- * Simplified but effective Kotlin syntax highlighting
+ * Simple Java syntax language (reuses Kotlin highlighting)
  */
-class KotlinSyntaxLanguage : EmptyLanguage() {
+class JavaSyntaxLanguage : EmptyLanguage() {
     
     override fun getInterruptionLevel(): Int {
         return INTERRUPTION_LEVEL_STRONG
@@ -127,78 +127,20 @@ object EditorConfigUtils {
      * Configure editor for optimal Kotlin editing experience
      */
     fun configureForKotlin(editor: io.github.rosemoe.sora.widget.CodeEditor) {
-        editor.apply {
-            // Set Kotlin language
-            setEditorLanguage(KotlinSyntaxLanguage())
-            
-            // Apply VS Code theme
-            VSCodeTheme.applyToEditor(this)
-            
-            // Configure editor behavior
-            isEditable = true
-            setLineNumberEnabled(true)
-            setWordwrap(false)
-            setTextSize(14f)
-            setCursorBlinkPeriod(500)
-            
-            // Enable advanced features
-            isHighlightCurrentBlock = true
-            isBlockLineEnabled = true
-            isHighlightCurrentLine = true
-            
-            // Configure input behavior
-            tabWidth = 4
-            
-            // Enable magnifier for easier text selection
-            getComponent(io.github.rosemoe.sora.widget.component.Magnifier::class.java)?.isEnabled = true
-        }
+        WorkingEditorConfig.configureForKotlin(editor)
     }
     
     /**
      * Configure editor for Java
      */
     fun configureForJava(editor: io.github.rosemoe.sora.widget.CodeEditor) {
-        editor.apply {
-            // Java uses similar configuration to Kotlin
-            setEditorLanguage(KotlinSyntaxLanguage()) // Can be reused for Java
-            VSCodeTheme.applyToEditor(this)
-            
-            // Configure for Java-specific behavior
-            isEditable = true
-            setLineNumberEnabled(true)
-            setWordwrap(false)
-            setTextSize(14f)
-            setCursorBlinkPeriod(500)
-            isHighlightCurrentBlock = true
-            isBlockLineEnabled = true
-            isHighlightCurrentLine = true
-            tabWidth = 4
-            
-            getComponent(io.github.rosemoe.sora.widget.component.Magnifier::class.java)?.isEnabled = true
-        }
+        WorkingEditorConfig.configureForJava(editor)
     }
     
     /**
      * Configure editor for plain text
      */
     fun configureForPlainText(editor: io.github.rosemoe.sora.widget.CodeEditor) {
-        editor.apply {
-            // Use empty language for plain text
-            setEditorLanguage(null)
-            VSCodeTheme.applyToEditor(this)
-            
-            isEditable = true
-            setLineNumberEnabled(true)
-            setWordwrap(true) // Enable word wrap for plain text
-            setTextSize(14f)
-            setCursorBlinkPeriod(500)
-            isHighlightCurrentLine = true
-            
-            // Disable code-specific features for plain text
-            isHighlightCurrentBlock = false
-            isBlockLineEnabled = false
-            
-            getComponent(io.github.rosemoe.sora.widget.component.Magnifier::class.java)?.isEnabled = true
-        }
+        WorkingEditorConfig.configureForPlainText(editor)
     }
 }

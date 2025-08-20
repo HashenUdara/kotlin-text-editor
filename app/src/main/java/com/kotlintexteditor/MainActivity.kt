@@ -241,7 +241,7 @@ fun StatusBar(
                     )
                     
                     if (editorState.isModified) {
-                        Text(
+    Text(
                             text = "•",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
