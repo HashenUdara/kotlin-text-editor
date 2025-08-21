@@ -75,7 +75,18 @@ fun TextEditorApp() {
     val openFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
-        uri?.let { viewModel.openFile(it) }
+        uri?.let { 
+            viewModel.openFile(it)
+        }
+    }
+    
+    // Alternative launcher using GetContent (sometimes works better)
+    val getContentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { 
+            viewModel.openFile(it)
+        }
     }
     
     val saveFileLauncher = rememberLauncherForActivityResult(
@@ -236,8 +247,13 @@ fun TextEditorApp() {
                     onDismiss = viewModel::hideFileBrowserDialog,
                     onOpenFile = {
                         viewModel.hideFileBrowserDialog()
-                        // Launch file picker with all file types to ensure it works
+                        // Use OpenDocument approach
                         openFileLauncher.launch(arrayOf("*/*"))
+                    },
+                    onOpenFileAlternative = {
+                        viewModel.hideFileBrowserDialog()
+                        // Use GetContent approach
+                        getContentLauncher.launch("*/*")
                     },
                     onOpenRecentFile = { recentFile ->
                         viewModel.openRecentFile(recentFile)

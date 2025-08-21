@@ -28,6 +28,7 @@ fun FileBrowserDialog(
     isVisible: Boolean,
     onDismiss: () -> Unit,
     onOpenFile: () -> Unit,
+    onOpenFileAlternative: () -> Unit = {},
     onOpenRecentFile: (RecentFile) -> Unit = {},
     recentFiles: List<RecentFile> = emptyList()
 ) {
@@ -57,7 +58,8 @@ fun FileBrowserDialog(
 
                 // Browse Files Section
                 BrowseFilesSection(
-                    onOpenFile = onOpenFile
+                    onOpenFile = onOpenFile,
+                    onOpenFileAlternative = onOpenFileAlternative
                 )
 
                 HorizontalDivider()
@@ -111,7 +113,8 @@ private fun DialogHeader(
 
 @Composable
 private fun BrowseFilesSection(
-    onOpenFile: () -> Unit
+    onOpenFile: () -> Unit,
+    onOpenFileAlternative: () -> Unit = {}
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -149,6 +152,31 @@ private fun BrowseFilesSection(
             )
         }
 
+        // Alternative browse button
+        OutlinedButton(
+            onClick = onOpenFileAlternative,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.secondary
+            ),
+            contentPadding = PaddingValues(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.FindInPage,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = "Alternative File Picker",
+                style = MaterialTheme.typography.labelMedium
+            )
+        }
+        
         // Quick access buttons
         Row(
             modifier = Modifier.fillMaxWidth(),
