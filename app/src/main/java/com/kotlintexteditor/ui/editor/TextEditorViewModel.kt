@@ -16,9 +16,17 @@ class TextEditorViewModel(application: Application) : AndroidViewModel(applicati
     private val fileManager = FileManager(application)
     private val textOperationsManager = TextOperationsManager(application)
     private val searchManager = SearchManager()
+    private val configurableEditorManager = com.kotlintexteditor.syntax.ConfigurableEditorManager.getInstance(application)
     
     // Track the original content when a file is opened for comparison
     private var originalFileContent: String = ""
+    
+    init {
+        // Initialize configurable syntax highlighting
+        viewModelScope.launch {
+            configurableEditorManager.initialize()
+        }
+    }
     
     // Editor state
     private val _editorState = MutableStateFlow(
@@ -86,6 +94,10 @@ class TextEditor {
     // File Browser Dialog state
     private val _isFileBrowserDialogVisible = MutableStateFlow(false)
     val isFileBrowserDialogVisible: StateFlow<Boolean> = _isFileBrowserDialogVisible.asStateFlow()
+    
+    // Language configuration dialog state
+    private val _isLanguageConfigDialogVisible = MutableStateFlow(false)
+    val isLanguageConfigDialogVisible: StateFlow<Boolean> = _isLanguageConfigDialogVisible.asStateFlow()
     
     // Recent files tracking
     private val _recentFiles = MutableStateFlow<List<com.kotlintexteditor.ui.dialogs.RecentFile>>(emptyList())
@@ -233,6 +245,20 @@ class TextEditor {
      */
     fun hideFileBrowserDialog() {
         _isFileBrowserDialogVisible.value = false
+    }
+    
+    /**
+     * Show language configuration dialog
+     */
+    fun showLanguageConfigDialog() {
+        _isLanguageConfigDialogVisible.value = true
+    }
+    
+    /**
+     * Hide language configuration dialog
+     */
+    fun hideLanguageConfigDialog() {
+        _isLanguageConfigDialogVisible.value = false
     }
     
     /**

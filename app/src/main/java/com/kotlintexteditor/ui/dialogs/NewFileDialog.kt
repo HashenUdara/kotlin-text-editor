@@ -44,6 +44,17 @@ fun NewFileDialog(
             fileName = when (selectedLanguage) {
                 EditorLanguage.KOTLIN -> "untitled.kt"
                 EditorLanguage.JAVA -> "untitled.java"
+                EditorLanguage.PYTHON -> "untitled.py"
+                EditorLanguage.JAVASCRIPT -> "untitled.js"
+                EditorLanguage.TYPESCRIPT -> "untitled.ts"
+                EditorLanguage.CSHARP -> "untitled.cs"
+                EditorLanguage.CPP -> "untitled.cpp"
+                EditorLanguage.HTML -> "untitled.html"
+                EditorLanguage.CSS -> "untitled.css"
+                EditorLanguage.JSON -> "untitled.json"
+                EditorLanguage.XML -> "untitled.xml"
+                EditorLanguage.YAML -> "untitled.yml"
+                EditorLanguage.MARKDOWN -> "untitled.md"
                 EditorLanguage.PLAIN_TEXT -> "untitled.txt"
             }
         }
@@ -212,6 +223,17 @@ private fun FileNameSection(
                     imageVector = when (selectedLanguage) {
                         EditorLanguage.KOTLIN -> Icons.Outlined.Code
                         EditorLanguage.JAVA -> Icons.Outlined.DataObject
+                        EditorLanguage.PYTHON -> Icons.Outlined.Code
+                        EditorLanguage.JAVASCRIPT -> Icons.Outlined.Javascript
+                        EditorLanguage.TYPESCRIPT -> Icons.Outlined.Code
+                        EditorLanguage.CSHARP -> Icons.Outlined.Code
+                        EditorLanguage.CPP -> Icons.Outlined.Code
+                        EditorLanguage.HTML -> Icons.Outlined.Html
+                        EditorLanguage.CSS -> Icons.Outlined.Css
+                        EditorLanguage.JSON -> Icons.Outlined.DataObject
+                        EditorLanguage.XML -> Icons.Outlined.Code
+                        EditorLanguage.YAML -> Icons.Outlined.Description
+                        EditorLanguage.MARKDOWN -> Icons.Outlined.Description
                         EditorLanguage.PLAIN_TEXT -> Icons.Outlined.TextSnippet
                     },
                     contentDescription = null,
@@ -226,6 +248,17 @@ private fun FileNameSection(
                     when (selectedLanguage) {
                         EditorLanguage.KOTLIN -> "MainActivity.kt"
                         EditorLanguage.JAVA -> "MainActivity.java"
+                        EditorLanguage.PYTHON -> "script.py"
+                        EditorLanguage.JAVASCRIPT -> "script.js"
+                        EditorLanguage.TYPESCRIPT -> "script.ts"
+                        EditorLanguage.CSHARP -> "Program.cs"
+                        EditorLanguage.CPP -> "main.cpp"
+                        EditorLanguage.HTML -> "index.html"
+                        EditorLanguage.CSS -> "styles.css"
+                        EditorLanguage.JSON -> "data.json"
+                        EditorLanguage.XML -> "document.xml"
+                        EditorLanguage.YAML -> "config.yml"
+                        EditorLanguage.MARKDOWN -> "README.md"
                         EditorLanguage.PLAIN_TEXT -> "document.txt"
                     },
                     style = MaterialTheme.typography.bodyMedium
@@ -258,7 +291,18 @@ private fun TemplateSelectionSection(
         val templates = when (selectedLanguage) {
             EditorLanguage.KOTLIN -> FileTemplate.kotlinTemplates
             EditorLanguage.JAVA -> FileTemplate.javaTemplates
-            else -> listOf(FileTemplate.EMPTY)
+            EditorLanguage.PYTHON -> listOf(FileTemplate.EMPTY)
+            EditorLanguage.JAVASCRIPT -> listOf(FileTemplate.EMPTY)
+            EditorLanguage.TYPESCRIPT -> listOf(FileTemplate.EMPTY)
+            EditorLanguage.CSHARP -> listOf(FileTemplate.EMPTY)
+            EditorLanguage.CPP -> listOf(FileTemplate.EMPTY)
+            EditorLanguage.HTML -> listOf(FileTemplate.EMPTY)
+            EditorLanguage.CSS -> listOf(FileTemplate.EMPTY)
+            EditorLanguage.JSON -> listOf(FileTemplate.EMPTY)
+            EditorLanguage.XML -> listOf(FileTemplate.EMPTY)
+            EditorLanguage.YAML -> listOf(FileTemplate.EMPTY)
+            EditorLanguage.MARKDOWN -> listOf(FileTemplate.EMPTY)
+            EditorLanguage.PLAIN_TEXT -> listOf(FileTemplate.EMPTY)
         }
         
         LazyTemplateGrid(

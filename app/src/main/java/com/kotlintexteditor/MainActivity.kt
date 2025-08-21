@@ -72,6 +72,9 @@ fun TextEditorApp() {
     val isFileBrowserDialogVisible by viewModel.isFileBrowserDialogVisible.collectAsState()
     val recentFiles by viewModel.recentFiles.collectAsState()
     
+    // Language Configuration Dialog state
+    val isLanguageConfigDialogVisible by viewModel.isLanguageConfigDialogVisible.collectAsState()
+    
     // File operation launchers
     val openFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -118,6 +121,11 @@ fun TextEditorApp() {
                     // Find & Replace button
                     IconButton(onClick = { viewModel.showFindReplaceDialog() }) {
                         Icon(Icons.Default.Search, contentDescription = "Find & Replace")
+                    }
+                    
+                    // Language Configuration button
+                    IconButton(onClick = { viewModel.showLanguageConfigDialog() }) {
+                        Icon(Icons.Default.Settings, contentDescription = "Language Settings")
                     }
                     
                                     // New file button
@@ -262,6 +270,12 @@ fun TextEditorApp() {
                         viewModel.openRecentFile(recentFile)
                     },
                     recentFiles = recentFiles
+                )
+                
+                // Language Configuration Dialog
+                com.kotlintexteditor.ui.dialogs.LanguageConfigurationDialog(
+                    isVisible = isLanguageConfigDialogVisible,
+                    onDismiss = viewModel::hideLanguageConfigDialog
                 )
     }
 }
