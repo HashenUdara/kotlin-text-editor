@@ -28,7 +28,7 @@ import com.kotlintexteditor.ui.editor.EditorState
 import com.kotlintexteditor.ui.editor.TextEditorViewModel
 import com.kotlintexteditor.ui.editor.TextEditorUiState
 import com.kotlintexteditor.ui.editor.TextOperationsToolbar
-import com.kotlintexteditor.ui.editor.FindReplaceDialog
+import com.kotlintexteditor.ui.editor.EnhancedFindReplaceDialog
 import com.kotlintexteditor.ui.dialogs.NewFileDialog
 import com.kotlintexteditor.ui.dialogs.FileBrowserDialog
 import com.kotlintexteditor.ui.theme.KotlinTextEditorTheme
@@ -61,6 +61,7 @@ fun TextEditorApp() {
     val replaceText by viewModel.replaceText.collectAsState()
     val isCaseSensitive by viewModel.isCaseSensitive.collectAsState()
     val isWholeWord by viewModel.isWholeWord.collectAsState()
+    val isRegexEnabled by viewModel.isRegexEnabled.collectAsState()
     val searchResults by viewModel.searchResults.collectAsState()
     val isSearchDialogVisible by viewModel.isSearchDialogVisible.collectAsState()
     
@@ -209,18 +210,20 @@ fun TextEditorApp() {
             }
         }
         
-                        // Find & Replace Dialog
-                FindReplaceDialog(
+                        // Enhanced Find & Replace Dialog
+                EnhancedFindReplaceDialog(
                     isVisible = isSearchDialogVisible,
                     searchQuery = searchQuery,
                     replaceText = replaceText,
                     isCaseSensitive = isCaseSensitive,
                     isWholeWord = isWholeWord,
+                    isRegexEnabled = isRegexEnabled,
                     searchResults = searchResults,
                     onSearchQueryChange = viewModel::updateSearchQuery,
                     onReplaceTextChange = viewModel::updateReplaceText,
                     onCaseSensitiveChange = viewModel::updateCaseSensitive,
                     onWholeWordChange = viewModel::updateWholeWord,
+                    onRegexEnabledChange = viewModel::updateRegexEnabled,
                     onFindNext = viewModel::findNext,
                     onFindPrevious = viewModel::findPrevious,
                     onReplace = viewModel::replaceCurrent,

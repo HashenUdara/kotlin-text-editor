@@ -23,6 +23,9 @@ class SearchManager {
     private val _isWholeWord = MutableStateFlow(false)
     val isWholeWord: StateFlow<Boolean> = _isWholeWord.asStateFlow()
     
+    private val _isRegexEnabled = MutableStateFlow(false)
+    val isRegexEnabled: StateFlow<Boolean> = _isRegexEnabled.asStateFlow()
+    
     private val _searchResults = MutableStateFlow(SearchResults())
     val searchResults: StateFlow<SearchResults> = _searchResults.asStateFlow()
     
@@ -80,6 +83,16 @@ class SearchManager {
      */
     fun updateWholeWord(wholeWord: Boolean) {
         _isWholeWord.value = wholeWord
+        if (_searchQuery.value.isNotEmpty()) {
+            performSearch()
+        }
+    }
+    
+    /**
+     * Update regex enabled setting
+     */
+    fun updateRegexEnabled(regexEnabled: Boolean) {
+        _isRegexEnabled.value = regexEnabled
         if (_searchQuery.value.isNotEmpty()) {
             performSearch()
         }
@@ -234,16 +247,25 @@ class SearchManager {
      * Create regex pattern based on search settings
      */
     private fun createSearchPattern(query: String): Pattern {
-        var patternString = if (_isWholeWord.value) {
-            "\\b${Pattern.quote(query)}\\b"
-        } else {
-            Pattern.quote(query)
+        val patternString = when {
+            _isRegexEnabled.value -> {
+                // Use query as-is for regex mode
+                query
+            }
+            _isWholeWord.value -> {
+                // Escape query and add word boundaries
+                "\\b${Pattern.quote(query)}\\b"
+            }
+            else -> {
+                // Escape query for literal matching
+                Pattern.quote(query)
+            }
         }
         
         val flags = if (_isCaseSensitive.value) {
             0
         } else {
-            Pattern.CASE_INSENSITIVE
+            Pattern.CASE_INSENSITIVE or Pattern.UNICODE_CASE
         }
         
         return Pattern.compile(patternString, flags)

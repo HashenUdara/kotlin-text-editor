@@ -75,6 +75,7 @@ class TextEditor {
     val replaceText = searchManager.replaceText
     val isCaseSensitive = searchManager.isCaseSensitive
     val isWholeWord = searchManager.isWholeWord
+    val isRegexEnabled = searchManager.isRegexEnabled
     val searchResults = searchManager.searchResults
     val isSearchDialogVisible = searchManager.isDialogVisible
     
@@ -513,6 +514,13 @@ class TextEditor {
      */
     fun updateWholeWord(wholeWord: Boolean) {
         searchManager.updateWholeWord(wholeWord)
+    }
+    
+    /**
+     * Update regex enabled
+     */
+    fun updateRegexEnabled(regexEnabled: Boolean) {
+        searchManager.updateRegexEnabled(regexEnabled)
     }
     
     /**
