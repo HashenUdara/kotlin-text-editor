@@ -40,22 +40,29 @@ fun NewFileDialog(
 
     // Update filename when language changes
     LaunchedEffect(selectedLanguage) {
-        if (fileName.isEmpty() || fileName == "untitled.kt" || fileName == "untitled.java" || fileName == "untitled.txt") {
-            fileName = when (selectedLanguage) {
-                EditorLanguage.KOTLIN -> "untitled.kt"
-                EditorLanguage.JAVA -> "untitled.java"
-                EditorLanguage.PYTHON -> "untitled.py"
-                EditorLanguage.JAVASCRIPT -> "untitled.js"
-                EditorLanguage.TYPESCRIPT -> "untitled.ts"
-                EditorLanguage.CSHARP -> "untitled.cs"
-                EditorLanguage.CPP -> "untitled.cpp"
-                EditorLanguage.HTML -> "untitled.html"
-                EditorLanguage.CSS -> "untitled.css"
-                EditorLanguage.JSON -> "untitled.json"
-                EditorLanguage.XML -> "untitled.xml"
-                EditorLanguage.YAML -> "untitled.yml"
-                EditorLanguage.MARKDOWN -> "untitled.md"
-                EditorLanguage.PLAIN_TEXT -> "untitled.txt"
+        val currentExtension = if (fileName.contains('.')) fileName.substringAfterLast('.') else ""
+        val defaultExtensions = listOf("kt", "java", "py", "js", "ts", "cs", "cpp", "html", "css", "json", "xml", "yml", "md", "txt")
+        
+        // Only update if filename is empty or has a default extension from our editor
+        if (fileName.isEmpty() || fileName.startsWith("untitled.") || currentExtension in defaultExtensions) {
+            val baseName = if (fileName.contains('.')) fileName.substringBeforeLast('.') else "untitled"
+            val newExtension = FileTemplate.getDefaultExtension(selectedLanguage)
+            fileName = "$baseName.$newExtension"
+        }
+    }
+    
+    // Auto-detect language from file extension when user changes filename
+    val onFileNameChange: (String) -> Unit = { newFileName ->
+        fileName = newFileName
+        
+        // Auto-detect language if the filename has an extension
+        if (newFileName.contains('.')) {
+            val extension = newFileName.substringAfterLast('.')
+            val detectedLanguage = FileTemplate.detectLanguageFromExtension(extension)
+            if (detectedLanguage != selectedLanguage) {
+                selectedLanguage = detectedLanguage
+                // Reset template to empty when language changes automatically
+                selectedTemplate = FileTemplate.EMPTY
             }
         }
     }
@@ -91,13 +98,16 @@ fun NewFileDialog(
                 // Content Sections
                 LanguageSelectionSection(
                     selectedLanguage = selectedLanguage,
-                    onLanguageSelect = { selectedLanguage = it }
+                    onLanguageSelect = { 
+                        selectedLanguage = it
+                        selectedTemplate = FileTemplate.EMPTY
+                    }
                 )
                 
                 FileNameSection(
                     fileName = fileName,
                     selectedLanguage = selectedLanguage,
-                    onFileNameChange = { fileName = it }
+                    onFileNameChange = onFileNameChange
                 )
                 
                 if (selectedLanguage != EditorLanguage.PLAIN_TEXT) {
@@ -288,22 +298,7 @@ private fun TemplateSelectionSection(
             icon = Icons.Outlined.Inventory
         )
         
-        val templates = when (selectedLanguage) {
-            EditorLanguage.KOTLIN -> FileTemplate.kotlinTemplates
-            EditorLanguage.JAVA -> FileTemplate.javaTemplates
-            EditorLanguage.PYTHON -> listOf(FileTemplate.EMPTY)
-            EditorLanguage.JAVASCRIPT -> listOf(FileTemplate.EMPTY)
-            EditorLanguage.TYPESCRIPT -> listOf(FileTemplate.EMPTY)
-            EditorLanguage.CSHARP -> listOf(FileTemplate.EMPTY)
-            EditorLanguage.CPP -> listOf(FileTemplate.EMPTY)
-            EditorLanguage.HTML -> listOf(FileTemplate.EMPTY)
-            EditorLanguage.CSS -> listOf(FileTemplate.EMPTY)
-            EditorLanguage.JSON -> listOf(FileTemplate.EMPTY)
-            EditorLanguage.XML -> listOf(FileTemplate.EMPTY)
-            EditorLanguage.YAML -> listOf(FileTemplate.EMPTY)
-            EditorLanguage.MARKDOWN -> listOf(FileTemplate.EMPTY)
-            EditorLanguage.PLAIN_TEXT -> listOf(FileTemplate.EMPTY)
-        }
+        val templates = FileTemplate.getTemplatesForLanguage(selectedLanguage)
         
         LazyTemplateGrid(
             templates = templates,
@@ -654,7 +649,502 @@ class ${"{fileName}"} : ComponentActivity() {
         """public interface ${"{fileName}"} {
     
 }"""
+    ),
+    
+    // Python Templates
+    PYTHON_SCRIPT(
+        "Python Script",
+        "Basic Python script with main",
+        """#!/usr/bin/env python3
+
+def main():
+    print("Hello, World!")
+
+if __name__ == "__main__":
+    main()"""
+    ),
+    
+    PYTHON_CLASS(
+        "Python Class",
+        "Basic Python class template",
+        """class ${"{fileName}"}:
+    \"\"\"Class description\"\"\"
+    
+    def __init__(self):
+        pass
+    
+    def __str__(self):
+        return f"${"{fileName}"}()"
+"""
+    ),
+    
+    PYTHON_FUNCTION(
+        "Python Function",
+        "Basic Python function template",
+        """def ${"{fileName}"}():
+    \"\"\"Function description\"\"\"
+    pass
+"""
+    ),
+    
+    PYTHON_FLASK_APP(
+        "Flask App",
+        "Basic Flask web application",
+        """from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/')
+def hello_world():
+    return 'Hello, World!'
+
+if __name__ == '__main__':
+    app.run(debug=True)"""
+    ),
+    
+    // JavaScript Templates
+    JAVASCRIPT_FUNCTION(
+        "JavaScript Function",
+        "Basic JavaScript function",
+        """function ${"{fileName}"}() {
+    console.log("Hello, World!");
+}
+
+${"{fileName}"}();"""
+    ),
+    
+    JAVASCRIPT_MODULE(
+        "ES6 Module",
+        "ES6 module with exports",
+        """// ${"{fileName}"}.js
+
+export function ${"{fileName}"}() {
+    console.log("Hello from module!");
+}
+
+export default ${"{fileName}"};"""
+    ),
+    
+    JAVASCRIPT_CLASS(
+        "JavaScript Class",
+        "ES6 class template",
+        """class ${"{fileName}"} {
+    constructor() {
+        // Constructor
+    }
+    
+    method() {
+        console.log("Method called");
+    }
+}
+
+export default ${"{fileName}"};"""
+    ),
+    
+    JAVASCRIPT_REACT_COMPONENT(
+        "React Component",
+        "React functional component",
+        """import React from 'react';
+
+function ${"{fileName}"}() {
+    return (
+        <div>
+            <h1>Hello from ${"{fileName}"}!</h1>
+        </div>
     );
+}
+
+export default ${"{fileName}"};"""
+    ),
+    
+    // TypeScript Templates
+    TYPESCRIPT_INTERFACE(
+        "TypeScript Interface",
+        "TypeScript interface definition",
+        """export interface ${"{fileName}"} {
+    id: number;
+    name: string;
+}"""
+    ),
+    
+    TYPESCRIPT_CLASS(
+        "TypeScript Class",
+        "TypeScript class with types",
+        """export class ${"{fileName}"} {
+    private id: number;
+    private name: string;
+    
+    constructor(id: number, name: string) {
+        this.id = id;
+        this.name = name;
+    }
+    
+    public getId(): number {
+        return this.id;
+    }
+    
+    public getName(): string {
+        return this.name;
+    }
+}"""
+    ),
+    
+    TYPESCRIPT_FUNCTION(
+        "TypeScript Function",
+        "TypeScript function with types",
+        """export function ${"{fileName}"}(param: string): string {
+    return `Hello, ${"$"}{param}!`;
+}"""
+    ),
+    
+    // C# Templates
+    CSHARP_CLASS(
+        "C# Class",
+        "Basic C# class template",
+        """using System;
+
+namespace MyNamespace
+{
+    public class ${"{fileName}"}
+    {
+        public ${"{fileName}"}()
+        {
+            // Constructor
+        }
+    }
+}"""
+    ),
+    
+    CSHARP_PROGRAM(
+        "C# Program",
+        "C# console application",
+        """using System;
+
+namespace MyApplication
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.WriteLine("Hello, World!");
+        }
+    }
+}"""
+    ),
+    
+    CSHARP_INTERFACE(
+        "C# Interface",
+        "C# interface definition",
+        """using System;
+
+namespace MyNamespace
+{
+    public interface I${"{fileName}"}
+    {
+        void DoSomething();
+    }
+}"""
+    ),
+    
+    // C++ Templates
+    CPP_MAIN(
+        "C++ Main",
+        "C++ program with main function",
+        """#include <iostream>
+
+int main() {
+    std::cout << "Hello, World!" << std::endl;
+    return 0;
+}"""
+    ),
+    
+    CPP_CLASS(
+        "C++ Class",
+        "C++ class with header",
+        """#ifndef ${"{fileName}".uppercase()}_H
+#define ${"{fileName}".uppercase()}_H
+
+class ${"{fileName}"} {
+private:
+    // Private members
+
+public:
+    ${"{fileName}"}();
+    ~${"{fileName}"}();
+    
+    // Public methods
+};
+
+#endif // ${"{fileName}".uppercase()}_H"""
+    ),
+    
+    CPP_FUNCTION(
+        "C++ Function",
+        "C++ function template",
+        """#include <iostream>
+
+void ${"{fileName}"}() {
+    std::cout << "Function called" << std::endl;
+}
+
+int main() {
+    ${"{fileName}"}();
+    return 0;
+}"""
+    ),
+    
+    // HTML Templates
+    HTML_BASIC(
+        "Basic HTML",
+        "Basic HTML5 document",
+        """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Hello, World!</h1>
+</body>
+</html>"""
+    ),
+    
+    HTML_TEMPLATE(
+        "HTML Template",
+        "Complete HTML template with CSS",
+        """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${"{fileName}"}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Welcome to ${"{fileName}"}</h1>
+    </header>
+    
+    <main>
+        <p>Your content here...</p>
+    </main>
+    
+    <script>
+        console.log('Page loaded');
+    </script>
+</body>
+</html>"""
+    ),
+    
+    // CSS Templates
+    CSS_RESET(
+        "CSS Reset",
+        "CSS reset stylesheet",
+        """/* CSS Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-bottom: 0.5em;
+}
+
+p {
+    margin-bottom: 1em;
+}"""
+    ),
+    
+    CSS_COMPONENT(
+        "CSS Component",
+        "CSS component styles",
+        """.${"{fileName}"} {
+    /* Component styles */
+    display: block;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.${"{fileName}"}__title {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.${"{fileName}"}__content {
+    color: #666;
+}
+
+.${"{fileName}"}--active {
+    border-color: #007bff;
+}"""
+    ),
+    
+    // JSON Templates
+    JSON_OBJECT(
+        "JSON Object",
+        "Basic JSON object",
+        """{
+    "name": "Example",
+    "version": "1.0.0",
+    "description": "A sample JSON object",
+    "data": {
+        "items": [],
+        "count": 0
+    }
+}"""
+    ),
+    
+    JSON_ARRAY(
+        "JSON Array",
+        "JSON array template",
+        """[
+    {
+        "id": 1,
+        "name": "Item 1",
+        "active": true
+    },
+    {
+        "id": 2,
+        "name": "Item 2",
+        "active": false
+    }
+]"""
+    ),
+    
+    JSON_CONFIG(
+        "JSON Config",
+        "Configuration file template",
+        """{
+    "app": {
+        "name": "${"{fileName}"}",
+        "version": "1.0.0",
+        "debug": false
+    },
+    "database": {
+        "host": "localhost",
+        "port": 5432,
+        "name": "mydb"
+    },
+    "features": {
+        "enableLogging": true,
+        "maxConnections": 100
+    }
+}"""
+    ),
+    
+    // XML Templates
+    XML_DOCUMENT(
+        "XML Document",
+        "Basic XML document",
+        """<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <item id="1">
+        <name>Example Item</name>
+        <description>This is an example XML item</description>
+    </item>
+</root>"""
+    ),
+    
+    // YAML Templates
+    YAML_CONFIG(
+        "YAML Config",
+        "YAML configuration file",
+        """# ${"{fileName}"} configuration
+app:
+  name: "${"{fileName}"}"
+  version: "1.0.0"
+  debug: false
+
+database:
+  host: localhost
+  port: 5432
+  name: mydb
+
+features:
+  enableLogging: true
+  maxConnections: 100"""
+    ),
+    
+    // Markdown Templates
+    MARKDOWN_README(
+        "README.md",
+        "Project README template",
+        """# ${"{fileName}"}
+
+## Description
+Brief description of your project.
+
+## Installation
+```bash
+# Installation instructions
+```
+
+## Usage
+```bash
+# Usage examples
+```
+
+## Features
+- Feature 1
+- Feature 2
+- Feature 3
+
+## Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## License
+MIT License"""
+    ),
+    
+    MARKDOWN_DOCUMENT(
+        "Markdown Document",
+        "Basic markdown document",
+        """# ${"{fileName}"}
+
+## Introduction
+This is a markdown document.
+
+## Sections
+
+### Subsection 1
+Content here...
+
+### Subsection 2
+More content...
+
+## Lists
+
+- Item 1
+- Item 2
+- Item 3
+
+## Code Example
+```bash
+echo "Hello, World!"
+```
+
+## Links
+[Example Link](https://example.com)
+""");
 
     companion object {
         val kotlinTemplates = listOf(
@@ -671,6 +1161,144 @@ class ${"{fileName}"} : ComponentActivity() {
             JAVA_MAIN_CLASS,
             JAVA_INTERFACE
         )
+        
+        val pythonTemplates = listOf(
+            EMPTY,
+            PYTHON_SCRIPT,
+            PYTHON_CLASS,
+            PYTHON_FUNCTION,
+            PYTHON_FLASK_APP
+        )
+        
+        val javascriptTemplates = listOf(
+            EMPTY,
+            JAVASCRIPT_FUNCTION,
+            JAVASCRIPT_MODULE,
+            JAVASCRIPT_CLASS,
+            JAVASCRIPT_REACT_COMPONENT
+        )
+        
+        val typescriptTemplates = listOf(
+            EMPTY,
+            TYPESCRIPT_INTERFACE,
+            TYPESCRIPT_CLASS,
+            TYPESCRIPT_FUNCTION
+        )
+        
+        val csharpTemplates = listOf(
+            EMPTY,
+            CSHARP_CLASS,
+            CSHARP_PROGRAM,
+            CSHARP_INTERFACE
+        )
+        
+        val cppTemplates = listOf(
+            EMPTY,
+            CPP_MAIN,
+            CPP_CLASS,
+            CPP_FUNCTION
+        )
+        
+        val htmlTemplates = listOf(
+            EMPTY,
+            HTML_BASIC,
+            HTML_TEMPLATE
+        )
+        
+        val cssTemplates = listOf(
+            EMPTY,
+            CSS_RESET,
+            CSS_COMPONENT
+        )
+        
+        val jsonTemplates = listOf(
+            EMPTY,
+            JSON_OBJECT,
+            JSON_ARRAY,
+            JSON_CONFIG
+        )
+        
+        val xmlTemplates = listOf(
+            EMPTY,
+            XML_DOCUMENT
+        )
+        
+        val yamlTemplates = listOf(
+            EMPTY,
+            YAML_CONFIG
+        )
+        
+        val markdownTemplates = listOf(
+            EMPTY,
+            MARKDOWN_README,
+            MARKDOWN_DOCUMENT
+        )
+        
+        /**
+         * Get templates for a specific language
+         */
+        fun getTemplatesForLanguage(language: EditorLanguage): List<FileTemplate> {
+            return when (language) {
+                EditorLanguage.KOTLIN -> kotlinTemplates
+                EditorLanguage.JAVA -> javaTemplates
+                EditorLanguage.PYTHON -> pythonTemplates
+                EditorLanguage.JAVASCRIPT -> javascriptTemplates
+                EditorLanguage.TYPESCRIPT -> typescriptTemplates
+                EditorLanguage.CSHARP -> csharpTemplates
+                EditorLanguage.CPP -> cppTemplates
+                EditorLanguage.HTML -> htmlTemplates
+                EditorLanguage.CSS -> cssTemplates
+                EditorLanguage.JSON -> jsonTemplates
+                EditorLanguage.XML -> xmlTemplates
+                EditorLanguage.YAML -> yamlTemplates
+                EditorLanguage.MARKDOWN -> markdownTemplates
+                EditorLanguage.PLAIN_TEXT -> listOf(EMPTY)
+            }
+        }
+        
+        /**
+         * Get default file extension for a language
+         */
+        fun getDefaultExtension(language: EditorLanguage): String {
+            return when (language) {
+                EditorLanguage.KOTLIN -> "kt"
+                EditorLanguage.JAVA -> "java"
+                EditorLanguage.PYTHON -> "py"
+                EditorLanguage.JAVASCRIPT -> "js"
+                EditorLanguage.TYPESCRIPT -> "ts"
+                EditorLanguage.CSHARP -> "cs"
+                EditorLanguage.CPP -> "cpp"
+                EditorLanguage.HTML -> "html"
+                EditorLanguage.CSS -> "css"
+                EditorLanguage.JSON -> "json"
+                EditorLanguage.XML -> "xml"
+                EditorLanguage.YAML -> "yml"
+                EditorLanguage.MARKDOWN -> "md"
+                EditorLanguage.PLAIN_TEXT -> "txt"
+            }
+        }
+        
+        /**
+         * Detect language from file extension
+         */
+        fun detectLanguageFromExtension(extension: String): EditorLanguage {
+            return when (extension.lowercase()) {
+                "kt", "kts" -> EditorLanguage.KOTLIN
+                "java" -> EditorLanguage.JAVA
+                "py", "pyw" -> EditorLanguage.PYTHON
+                "js", "mjs", "jsx" -> EditorLanguage.JAVASCRIPT
+                "ts", "tsx" -> EditorLanguage.TYPESCRIPT
+                "cs" -> EditorLanguage.CSHARP
+                "cpp", "cxx", "cc", "c", "h", "hpp" -> EditorLanguage.CPP
+                "html", "htm" -> EditorLanguage.HTML
+                "css" -> EditorLanguage.CSS
+                "json" -> EditorLanguage.JSON
+                "xml" -> EditorLanguage.XML
+                "yml", "yaml" -> EditorLanguage.YAML
+                "md", "markdown" -> EditorLanguage.MARKDOWN
+                else -> EditorLanguage.PLAIN_TEXT
+            }
+        }
     }
     
     /**
