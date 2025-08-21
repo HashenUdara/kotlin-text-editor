@@ -235,12 +235,9 @@ fun TextEditorApp() {
                     isVisible = isFileBrowserDialogVisible,
                     onDismiss = viewModel::hideFileBrowserDialog,
                     onOpenFile = {
-                        if (storagePermissionState.status.isGranted) {
-                            openFileLauncher.launch(FileManager.TEXT_MIME_TYPES)
-                        } else {
-                            storagePermissionState.launchPermissionRequest()
-                        }
                         viewModel.hideFileBrowserDialog()
+                        // Launch file picker with all file types to ensure it works
+                        openFileLauncher.launch(arrayOf("*/*"))
                     },
                     onOpenRecentFile = { recentFile ->
                         viewModel.openRecentFile(recentFile)
