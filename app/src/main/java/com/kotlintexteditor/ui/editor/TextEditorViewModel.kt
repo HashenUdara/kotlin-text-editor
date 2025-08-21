@@ -82,6 +82,14 @@ class TextEditor {
     private val _isNewFileDialogVisible = MutableStateFlow(false)
     val isNewFileDialogVisible: StateFlow<Boolean> = _isNewFileDialogVisible.asStateFlow()
     
+    // File Browser Dialog state
+    private val _isFileBrowserDialogVisible = MutableStateFlow(false)
+    val isFileBrowserDialogVisible: StateFlow<Boolean> = _isFileBrowserDialogVisible.asStateFlow()
+    
+    // Recent files tracking
+    private val _recentFiles = MutableStateFlow<List<com.kotlintexteditor.ui.dialogs.RecentFile>>(emptyList())
+    val recentFiles: StateFlow<List<com.kotlintexteditor.ui.dialogs.RecentFile>> = _recentFiles.asStateFlow()
+    
     /**
      * Update editor text content
      */
@@ -149,6 +157,9 @@ class TextEditor {
                     currentFileUri = uri,
                     statusMessage = "File opened: ${result.fileName}"
                 )
+                
+                // Add to recent files
+                addToRecentFiles(result.fileName, uri.toString(), result.content.length.toLong())
             } else {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -207,6 +218,20 @@ class TextEditor {
      */
     fun hideNewFileDialog() {
         _isNewFileDialogVisible.value = false
+    }
+    
+    /**
+     * Show file browser dialog
+     */
+    fun showFileBrowserDialog() {
+        _isFileBrowserDialogVisible.value = true
+    }
+    
+    /**
+     * Hide file browser dialog
+     */
+    fun hideFileBrowserDialog() {
+        _isFileBrowserDialogVisible.value = false
     }
     
     /**
@@ -586,6 +611,57 @@ class TextEditor {
      */
     fun getCurrentSearchMatch(): SearchMatch? {
         return searchManager.getCurrentMatch()
+    }
+    
+    /**
+     * Add file to recent files list
+     */
+    private fun addToRecentFiles(fileName: String, path: String, sizeBytes: Long) {
+        val currentRecentFiles = _recentFiles.value.toMutableList()
+        
+        // Remove if already exists (to move to top)
+        currentRecentFiles.removeAll { it.name == fileName }
+        
+        // Add to beginning of list
+        val recentFile = com.kotlintexteditor.ui.dialogs.RecentFile.create(
+            name = fileName,
+            path = path,
+            lastModifiedTimestamp = System.currentTimeMillis(),
+            sizeBytes = sizeBytes,
+            uri = path
+        )
+        currentRecentFiles.add(0, recentFile)
+        
+        // Keep only last 10 files
+        if (currentRecentFiles.size > 10) {
+            currentRecentFiles.removeAt(currentRecentFiles.size - 1)
+        }
+        
+        _recentFiles.value = currentRecentFiles
+    }
+    
+    /**
+     * Open a recent file
+     */
+    fun openRecentFile(recentFile: com.kotlintexteditor.ui.dialogs.RecentFile) {
+        recentFile.uri?.let { uriString ->
+            try {
+                val uri = android.net.Uri.parse(uriString)
+                openFile(uri)
+                hideFileBrowserDialog()
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Failed to open recent file: ${recentFile.name}"
+                )
+            }
+        }
+    }
+    
+    /**
+     * Clear recent files list
+     */
+    fun clearRecentFiles() {
+        _recentFiles.value = emptyList()
     }
 }
 
