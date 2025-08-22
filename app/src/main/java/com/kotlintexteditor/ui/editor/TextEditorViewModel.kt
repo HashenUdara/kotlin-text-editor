@@ -16,15 +16,15 @@ class TextEditorViewModel(application: Application) : AndroidViewModel(applicati
     private val fileManager = FileManager(application)
     private val textOperationsManager = TextOperationsManager(application)
     private val searchManager = SearchManager()
-    private val configurableEditorManager = com.kotlintexteditor.syntax.ConfigurableEditorManager.getInstance(application)
-    
+        private val enhancedLanguageManager = com.kotlintexteditor.syntax.EnhancedLanguageManager.getInstance(application)
+
     // Track the original content when a file is opened for comparison
     private var originalFileContent: String = ""
-    
+
     init {
-        // Initialize configurable syntax highlighting
+        // Initialize enhanced syntax highlighting
         viewModelScope.launch {
-            configurableEditorManager.initialize()
+            enhancedLanguageManager.initialize()
         }
     }
     

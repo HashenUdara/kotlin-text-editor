@@ -69,30 +69,13 @@ fun CodeEditorView(
 }
 
 private fun setupEditor(editor: CodeEditor, language: EditorLanguage, isReadOnly: Boolean) {
-    // Configure editor based on language type using configurable system
+    // Configure editor based on language type using enhanced language system
     val context = editor.context
-    val configurableManager = com.kotlintexteditor.syntax.ConfigurableEditorManager.getInstance(context)
-    
-    val supportedLanguage = when (language) {
-        EditorLanguage.KOTLIN -> com.kotlintexteditor.syntax.SupportedLanguage.KOTLIN
-        EditorLanguage.JAVA -> com.kotlintexteditor.syntax.SupportedLanguage.JAVA
-        EditorLanguage.PYTHON -> com.kotlintexteditor.syntax.SupportedLanguage.PYTHON
-        EditorLanguage.JAVASCRIPT -> com.kotlintexteditor.syntax.SupportedLanguage.JAVASCRIPT
-        EditorLanguage.TYPESCRIPT -> com.kotlintexteditor.syntax.SupportedLanguage.TYPESCRIPT
-        EditorLanguage.CSHARP -> com.kotlintexteditor.syntax.SupportedLanguage.CSHARP
-        EditorLanguage.CPP -> com.kotlintexteditor.syntax.SupportedLanguage.CPP
-        EditorLanguage.HTML -> com.kotlintexteditor.syntax.SupportedLanguage.HTML
-        EditorLanguage.CSS -> com.kotlintexteditor.syntax.SupportedLanguage.CSS
-        EditorLanguage.JSON -> com.kotlintexteditor.syntax.SupportedLanguage.JSON
-        EditorLanguage.XML -> com.kotlintexteditor.syntax.SupportedLanguage.XML
-        EditorLanguage.YAML -> com.kotlintexteditor.syntax.SupportedLanguage.YAML
-        EditorLanguage.MARKDOWN -> com.kotlintexteditor.syntax.SupportedLanguage.MARKDOWN
-        EditorLanguage.PLAIN_TEXT -> com.kotlintexteditor.syntax.SupportedLanguage.PLAIN_TEXT
-    }
-    
-    // Use configurable syntax highlighting
-    configurableManager.configureEditor(editor, supportedLanguage)
-    
+    val languageManager = com.kotlintexteditor.syntax.EnhancedLanguageManager.getInstance(context)
+
+    // Use enhanced syntax highlighting with fallbacks
+    languageManager.configureEditor(editor, language)
+
     // Set read-only mode if needed
     editor.isEditable = !isReadOnly
 }

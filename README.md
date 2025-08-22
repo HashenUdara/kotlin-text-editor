@@ -12,7 +12,8 @@ This Android text editor is built using modern Android development practices wit
 - [x] **File Operations**
   - [x] Open files using Storage Access Framework
   - [x] Save files with proper file extension handling
-  - [x] Create new files
+  - [x] Create new files with **40+ professional templates across 14 languages**
+  - [x] **Smart language detection** from file extensions (.py, .js, .ts, etc.)
   - [x] Automatic saving (2-second delay after editing)
 - [x] **File Extension Support**
   - [x] .txt, .kt, .java, .py, .js, .html, .css, .xml, .json, .md
