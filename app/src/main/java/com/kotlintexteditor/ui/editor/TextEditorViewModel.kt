@@ -16,7 +16,8 @@ class TextEditorViewModel(application: Application) : AndroidViewModel(applicati
     private val fileManager = FileManager(application)
     private val textOperationsManager = TextOperationsManager(application)
     private val searchManager = SearchManager()
-        private val enhancedLanguageManager = com.kotlintexteditor.syntax.EnhancedLanguageManager.getInstance(application)
+    private val enhancedLanguageManager = com.kotlintexteditor.syntax.EnhancedLanguageManager.getInstance(application)
+    private val compilationService = com.kotlintexteditor.compilation.CompilationService.getInstance(application)
 
     // Track the original content when a file is opened for comparison
     private var originalFileContent: String = ""
@@ -696,6 +697,87 @@ class TextEditor {
      */
     fun clearRecentFiles() {
         _recentFiles.value = emptyList()
+    }
+    
+    // Compilation state and methods
+    val compilationStatus = compilationService.compilationStatus
+    val compilationResult = compilationService.compilationResult
+    
+    /**
+     * Compile the current Kotlin code via ADB
+     */
+    fun compileCurrentCode() {
+        val currentState = _editorState.value
+        
+        // Only compile Kotlin files
+        if (currentState.language != EditorLanguage.KOTLIN) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "Compilation is only supported for Kotlin files"
+            )
+            return
+        }
+        
+        // Check if there's code to compile
+        if (currentState.text.isBlank()) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "No code to compile"
+            )
+            return
+        }
+        
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(statusMessage = "Starting compilation...")
+                
+                val fileName = currentState.filePath?.let { path ->
+                    path.substringAfterLast("/").ifEmpty { "Main.kt" }
+                } ?: "Main.kt"
+                
+                val result = compilationService.compileKotlinCode(
+                    sourceCode = currentState.text,
+                    fileName = fileName
+                )
+                
+                when (result) {
+                    is com.kotlintexteditor.compilation.CompilationResult.Success -> {
+                        _uiState.value = _uiState.value.copy(
+                            statusMessage = "Compilation successful: ${result.message}",
+                            errorMessage = null
+                        )
+                    }
+                    is com.kotlintexteditor.compilation.CompilationResult.Error -> {
+                        _uiState.value = _uiState.value.copy(
+                            errorMessage = "Compilation failed: ${result.message}",
+                            statusMessage = null
+                        )
+                    }
+                }
+                
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Compilation error: ${e.message}",
+                    statusMessage = null
+                )
+            }
+        }
+    }
+    
+    /**
+     * Clear compilation results
+     */
+    fun clearCompilationResult() {
+        // Reset the compilation result
+        viewModelScope.launch {
+            compilationService.compilationResult.value.let {
+                if (it != null) {
+                    // Simply clear the status message to effectively clear the result display
+                    _uiState.value = _uiState.value.copy(
+                        statusMessage = null,
+                        errorMessage = null
+                    )
+                }
+            }
+        }
     }
 }
 

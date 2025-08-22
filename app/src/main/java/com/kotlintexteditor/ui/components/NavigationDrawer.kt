@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 fun NavigationDrawer(
     onFindReplaceClick: () -> Unit,
     onLanguageConfigClick: () -> Unit,
+    onCompileClick: () -> Unit,
     onAutoSaveToggle: () -> Unit,
     onAboutClick: () -> Unit,
     onSettingsClick: () -> Unit,
@@ -56,6 +57,13 @@ fun NavigationDrawer(
                 title = "Language Settings",
                 subtitle = "Configure syntax highlighting",
                 onClick = onLanguageConfigClick
+            )
+            
+            DrawerMenuItem(
+                icon = Icons.Default.PlayArrow,
+                title = "Compile Code",
+                subtitle = "Compile Kotlin code via ADB",
+                onClick = onCompileClick
             )
         }
         

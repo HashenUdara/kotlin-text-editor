@@ -36,6 +36,7 @@ import com.kotlintexteditor.ui.dialogs.LanguageConfigurationDialog
 import com.kotlintexteditor.ui.components.NavigationDrawer
 import com.kotlintexteditor.ui.components.AboutDialog
 import com.kotlintexteditor.ui.components.SettingsDialog
+import com.kotlintexteditor.ui.components.CompilationStatusDialog
 import com.kotlintexteditor.ui.theme.KotlinTextEditorTheme
 
 class MainActivity : ComponentActivity() {
@@ -68,6 +69,11 @@ fun TextEditorApp() {
     // Local dialog states for drawer menu items
     var isAboutDialogVisible by remember { mutableStateOf(false) }
     var isSettingsDialogVisible by remember { mutableStateOf(false) }
+    var isCompilationDialogVisible by remember { mutableStateOf(false) }
+    
+    // Compilation state
+    val compilationStatus by viewModel.compilationStatus.collectAsState()
+    val compilationResult by viewModel.compilationResult.collectAsState()
     
     // Search state
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -129,6 +135,11 @@ fun TextEditorApp() {
                     onLanguageConfigClick = {
                         scope.launch { drawerState.close() }
                         viewModel.showLanguageConfigDialog()
+                    },
+                    onCompileClick = {
+                        scope.launch { drawerState.close() }
+                        isCompilationDialogVisible = true
+                        viewModel.compileCurrentCode()
                     },
                     onAutoSaveToggle = {
                         viewModel.toggleAutoSave()
@@ -322,6 +333,17 @@ fun TextEditorApp() {
             onDismiss = { isSettingsDialogVisible = false },
             isAutoSaveEnabled = uiState.autoSaveEnabled,
             onAutoSaveToggle = viewModel::toggleAutoSave
+        )
+        
+        // Compilation Status Dialog
+        CompilationStatusDialog(
+            isVisible = isCompilationDialogVisible,
+            onDismiss = { 
+                isCompilationDialogVisible = false
+                viewModel.clearCompilationResult()
+            },
+            compilationStatus = compilationStatus,
+            compilationResult = compilationResult
         )
         }
     }
