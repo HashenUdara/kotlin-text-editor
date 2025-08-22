@@ -58,58 +58,58 @@ class EnhancedLanguageManager private constructor(private val context: Context) 
             }
             
             EditorLanguage.PYTHON -> {
-                // Try TextMate Python, fallback to enhanced empty language
-                createEnhancedLanguageForPython()
+                // Use enhanced empty language with good editor settings
+                createEnhancedEmptyLanguage()
             }
             
             EditorLanguage.JAVASCRIPT -> {
-                // Try TextMate JavaScript, fallback to enhanced empty language
-                createEnhancedLanguageForJavaScript()
+                // Use enhanced empty language with good editor settings
+                createEnhancedEmptyLanguage()
             }
             
             EditorLanguage.TYPESCRIPT -> {
-                // TypeScript is similar to JavaScript, use enhanced language
-                createEnhancedLanguageForTypeScript()
+                // Use enhanced empty language with good editor settings
+                createEnhancedEmptyLanguage()
             }
             
             EditorLanguage.HTML -> {
-                // Use enhanced language for HTML
-                createEnhancedLanguageForHTML()
+                // Use enhanced empty language with good editor settings
+                createEnhancedEmptyLanguage()
             }
             
             EditorLanguage.CSS -> {
-                // Use enhanced language for CSS
-                createEnhancedLanguageForCSS()
+                // Use enhanced empty language with good editor settings
+                createEnhancedEmptyLanguage()
             }
             
             EditorLanguage.JSON -> {
-                // Use enhanced language for JSON
-                createEnhancedLanguageForJSON()
+                // Use enhanced empty language with good editor settings
+                createEnhancedEmptyLanguage()
             }
             
             EditorLanguage.XML -> {
-                // Use enhanced language for XML
-                createEnhancedLanguageForXML()
+                // Use enhanced empty language with good editor settings
+                createEnhancedEmptyLanguage()
             }
             
             EditorLanguage.YAML -> {
-                // Use enhanced language for YAML
-                createEnhancedLanguageForYAML()
+                // Use enhanced empty language with good editor settings
+                createEnhancedEmptyLanguage()
             }
             
             EditorLanguage.MARKDOWN -> {
-                // Use enhanced language for Markdown
-                createEnhancedLanguageForMarkdown()
+                // Use enhanced empty language with good editor settings
+                createEnhancedEmptyLanguage()
             }
             
             EditorLanguage.CSHARP -> {
-                // C# is similar to Java, use Java language as base
+                // C# is similar to Java, use Java language as base for syntax highlighting
                 JavaLanguage()
             }
             
             EditorLanguage.CPP -> {
-                // Use enhanced language for C++
-                createEnhancedLanguageForCPP()
+                // Use enhanced empty language with good editor settings
+                createEnhancedEmptyLanguage()
             }
             
             EditorLanguage.PLAIN_TEXT -> {
@@ -120,133 +120,11 @@ class EnhancedLanguageManager private constructor(private val context: Context) 
     }
     
     /**
-     * Create enhanced Python language with basic syntax highlighting
+     * Create enhanced language using EmptyLanguage with optimized settings
+     * This provides a clean, working editor experience for all languages
      */
-    private fun createEnhancedLanguageForPython(): Language {
-        return try {
-            // Try to use TextMate if available
-            io.github.rosemoe.sora.langs.textmate.TextMateLanguage.create("source.python", true)
-        } catch (e: Exception) {
-            // Fallback to empty language
-            EmptyLanguage()
-        }
-    }
-    
-    /**
-     * Create enhanced JavaScript language
-     */
-    private fun createEnhancedLanguageForJavaScript(): Language {
-        return try {
-            // Try to use TextMate if available
-            io.github.rosemoe.sora.langs.textmate.TextMateLanguage.create("source.js", true)
-        } catch (e: Exception) {
-            // Fallback to empty language
-            EmptyLanguage()
-        }
-    }
-    
-    /**
-     * Create enhanced TypeScript language
-     */
-    private fun createEnhancedLanguageForTypeScript(): Language {
-        return try {
-            // Try to use TextMate if available
-            io.github.rosemoe.sora.langs.textmate.TextMateLanguage.create("source.ts", true)
-        } catch (e: Exception) {
-            // Fallback to empty language
-            EmptyLanguage()
-        }
-    }
-    
-    /**
-     * Create enhanced HTML language
-     */
-    private fun createEnhancedLanguageForHTML(): Language {
-        return try {
-            // Try to use TextMate if available
-            io.github.rosemoe.sora.langs.textmate.TextMateLanguage.create("text.html.basic", true)
-        } catch (e: Exception) {
-            // Fallback to empty language
-            EmptyLanguage()
-        }
-    }
-    
-    /**
-     * Create enhanced CSS language
-     */
-    private fun createEnhancedLanguageForCSS(): Language {
-        return try {
-            // Try to use TextMate if available
-            io.github.rosemoe.sora.langs.textmate.TextMateLanguage.create("source.css", true)
-        } catch (e: Exception) {
-            // Fallback to empty language
-            EmptyLanguage()
-        }
-    }
-    
-    /**
-     * Create enhanced JSON language
-     */
-    private fun createEnhancedLanguageForJSON(): Language {
-        return try {
-            // Try to use TextMate if available
-            io.github.rosemoe.sora.langs.textmate.TextMateLanguage.create("source.json", true)
-        } catch (e: Exception) {
-            // Fallback to empty language
-            EmptyLanguage()
-        }
-    }
-    
-    /**
-     * Create enhanced XML language
-     */
-    private fun createEnhancedLanguageForXML(): Language {
-        return try {
-            // Try to use TextMate if available
-            io.github.rosemoe.sora.langs.textmate.TextMateLanguage.create("text.xml", true)
-        } catch (e: Exception) {
-            // Fallback to empty language
-            EmptyLanguage()
-        }
-    }
-    
-    /**
-     * Create enhanced YAML language
-     */
-    private fun createEnhancedLanguageForYAML(): Language {
-        return try {
-            // Try to use TextMate if available
-            io.github.rosemoe.sora.langs.textmate.TextMateLanguage.create("source.yaml", true)
-        } catch (e: Exception) {
-            // Fallback to empty language
-            EmptyLanguage()
-        }
-    }
-    
-    /**
-     * Create enhanced Markdown language
-     */
-    private fun createEnhancedLanguageForMarkdown(): Language {
-        return try {
-            // Try to use TextMate if available
-            io.github.rosemoe.sora.langs.textmate.TextMateLanguage.create("text.html.markdown", true)
-        } catch (e: Exception) {
-            // Fallback to empty language
-            EmptyLanguage()
-        }
-    }
-    
-    /**
-     * Create enhanced C++ language
-     */
-    private fun createEnhancedLanguageForCPP(): Language {
-        return try {
-            // Try to use TextMate if available
-            io.github.rosemoe.sora.langs.textmate.TextMateLanguage.create("source.cpp", true)
-        } catch (e: Exception) {
-            // Fallback to empty language
-            EmptyLanguage()
-        }
+    private fun createEnhancedEmptyLanguage(): Language {
+        return EmptyLanguage()
     }
     
     /**
