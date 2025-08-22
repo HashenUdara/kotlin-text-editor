@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -31,6 +32,10 @@ import com.kotlintexteditor.ui.editor.TextOperationsToolbar
 import com.kotlintexteditor.ui.editor.EnhancedFindReplaceDialog
 import com.kotlintexteditor.ui.dialogs.NewFileDialog
 import com.kotlintexteditor.ui.dialogs.FileBrowserDialog
+import com.kotlintexteditor.ui.dialogs.LanguageConfigurationDialog
+import com.kotlintexteditor.ui.components.NavigationDrawer
+import com.kotlintexteditor.ui.components.AboutDialog
+import com.kotlintexteditor.ui.components.SettingsDialog
 import com.kotlintexteditor.ui.theme.KotlinTextEditorTheme
 
 class MainActivity : ComponentActivity() {
@@ -55,6 +60,14 @@ fun TextEditorApp() {
     val canUndo by viewModel.canUndo.collectAsState()
     val canRedo by viewModel.canRedo.collectAsState()
     val canPaste by viewModel.canPaste.collectAsState()
+    
+    // Drawer state for hamburger menu
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    
+    // Local dialog states for drawer menu items
+    var isAboutDialogVisible by remember { mutableStateOf(false) }
+    var isSettingsDialogVisible by remember { mutableStateOf(false) }
     
     // Search state
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -104,65 +117,84 @@ fun TextEditorApp() {
         Manifest.permission.READ_EXTERNAL_STORAGE
     )
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Text("Kotlin Text Editor") 
-                },
-                navigationIcon = {
-                    IconButton(onClick = { 
-                        // Show menu with file operations
-                    }) {
-                        Icon(Icons.Default.Menu, contentDescription = "Menu")
-                    }
-                },
-                actions = {
-                    // Find & Replace button
-                    IconButton(onClick = { viewModel.showFindReplaceDialog() }) {
-                        Icon(Icons.Default.Search, contentDescription = "Find & Replace")
-                    }
-                    
-                    // Language Configuration button
-                    IconButton(onClick = { viewModel.showLanguageConfigDialog() }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Language Settings")
-                    }
-                    
-                                    // New file button
-                IconButton(onClick = { viewModel.showNewFileDialog() }) {
-                    Icon(Icons.Default.Add, contentDescription = "New File")
-                }
-                    
-                                    // Open file button
-                IconButton(onClick = { viewModel.showFileBrowserDialog() }) {
-                        Icon(Icons.Default.FolderOpen, contentDescription = "Open File")
-                    }
-                    
-                    // Save file button
-                                        IconButton(
-                        onClick = {
-                            if (uiState.currentFileUri != null) {
-                                viewModel.saveFile()
-                            } else {
-                                // Save as new file - determine extension based on language
-                                val fileName = when (editorState.language) {
-                                    EditorLanguage.KOTLIN -> "untitled.kt"
-                                    EditorLanguage.JAVA -> "untitled.java"
-                                    else -> "untitled.txt"
+        ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                NavigationDrawer(
+                    onFindReplaceClick = {
+                        scope.launch { drawerState.close() }
+                        viewModel.showFindReplaceDialog()
+                    },
+                    onLanguageConfigClick = {
+                        scope.launch { drawerState.close() }
+                        viewModel.showLanguageConfigDialog()
+                    },
+                    onAutoSaveToggle = {
+                        viewModel.toggleAutoSave()
+                    },
+                    onAboutClick = {
+                        scope.launch { drawerState.close() }
+                        isAboutDialogVisible = true
+                    },
+                    onSettingsClick = {
+                        scope.launch { drawerState.close() }
+                        isSettingsDialogVisible = true
+                    },
+                    isAutoSaveEnabled = uiState.autoSaveEnabled
+                )
+            }
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text("Kotlin Text Editor")
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            scope.launch { drawerState.open() }
+                        }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Open menu")
+                        }
+                    },
+                    actions = {
+                        // New file button (primary action)
+                        IconButton(onClick = { viewModel.showNewFileDialog() }) {
+                            Icon(Icons.Default.Add, contentDescription = "New File")
+                        }
+
+                        // Open file button (primary action)
+                        IconButton(onClick = { viewModel.showFileBrowserDialog() }) {
+                            Icon(Icons.Default.FolderOpen, contentDescription = "Open File")
+                        }
+
+                        // Save file button (primary action)
+                        IconButton(
+                            onClick = {
+                                if (uiState.currentFileUri != null) {
+                                    viewModel.saveFile()
+                                } else {
+                                    // Save as new file - determine extension based on language
+                                    val fileName = when (editorState.language) {
+                                        EditorLanguage.KOTLIN -> "untitled.kt"
+                                        EditorLanguage.JAVA -> "untitled.java"
+                                        else -> "untitled.txt"
+                                    }
+                                    saveFileLauncher.launch(fileName)
                                 }
-                                saveFileLauncher.launch(fileName)
-                            }
-                        },
-                        enabled = editorState.isModified
-                    ) {
-                        Icon(
-                            imageVector = if (uiState.currentFileUri != null) Icons.Default.Save else Icons.Default.SaveAs,
-                            contentDescription = if (uiState.currentFileUri != null) "Save" else "Save As"
-                        )
+                            },
+                            enabled = editorState.isModified
+                        ) {
+                            Icon(
+                                imageVector = if (uiState.currentFileUri != null) Icons.Default.Save else Icons.Default.SaveAs,
+                                contentDescription = if (uiState.currentFileUri != null) "Save" else "Save As"
+                            )
+                        }
                     }
-                }
-            )
-        },
+                )
+            },
         bottomBar = {
             StatusBar(
                 editorState = editorState,
@@ -217,9 +249,9 @@ fun TextEditorApp() {
                 )
             }
         }
-        
-                        // Enhanced Find & Replace Dialog
-                EnhancedFindReplaceDialog(
+
+        // Enhanced Find & Replace Dialog
+        EnhancedFindReplaceDialog(
                     isVisible = isSearchDialogVisible,
                     searchQuery = searchQuery,
                     replaceText = replaceText,
@@ -237,46 +269,61 @@ fun TextEditorApp() {
                     onReplace = viewModel::replaceCurrent,
                     onReplaceAll = viewModel::replaceAll,
                     onClose = viewModel::hideFindReplaceDialog
-                )
-                
-                // New File Dialog
-                NewFileDialog(
-                    isVisible = isNewFileDialogVisible,
-                    onDismiss = viewModel::hideNewFileDialog,
-                    onCreateFile = { language, fileName, template ->
-                        viewModel.createNewFile(language, fileName, template)
-                    },
-                    onCreateFileWithLocation = { language, fileName, template ->
-                        val suggestedFileName = viewModel.createNewFileWithSaveDialog(language, fileName, template)
-                        saveFileLauncher.launch(suggestedFileName)
-                    }
-                )
-                
-                // File Browser Dialog
-                FileBrowserDialog(
-                    isVisible = isFileBrowserDialogVisible,
-                    onDismiss = viewModel::hideFileBrowserDialog,
-                    onOpenFile = {
-                        viewModel.hideFileBrowserDialog()
-                        // Use OpenDocument approach
-                        openFileLauncher.launch(arrayOf("*/*"))
-                    },
-                    onOpenFileAlternative = {
-                        viewModel.hideFileBrowserDialog()
-                        // Use GetContent approach
-                        getContentLauncher.launch("*/*")
-                    },
-                    onOpenRecentFile = { recentFile ->
-                        viewModel.openRecentFile(recentFile)
-                    },
-                    recentFiles = recentFiles
-                )
-                
-                // Language Configuration Dialog
-                com.kotlintexteditor.ui.dialogs.LanguageConfigurationDialog(
-                    isVisible = isLanguageConfigDialogVisible,
-                    onDismiss = viewModel::hideLanguageConfigDialog
-                )
+        )
+
+        // New File Dialog
+        NewFileDialog(
+            isVisible = isNewFileDialogVisible,
+            onDismiss = viewModel::hideNewFileDialog,
+            onCreateFile = { language, fileName, template ->
+                viewModel.createNewFile(language, fileName, template)
+            },
+            onCreateFileWithLocation = { language, fileName, template ->
+                val suggestedFileName = viewModel.createNewFileWithSaveDialog(language, fileName, template)
+                saveFileLauncher.launch(suggestedFileName)
+            }
+        )
+
+        // File Browser Dialog
+        FileBrowserDialog(
+            isVisible = isFileBrowserDialogVisible,
+            onDismiss = viewModel::hideFileBrowserDialog,
+            onOpenFile = {
+                viewModel.hideFileBrowserDialog()
+                // Use OpenDocument approach
+                openFileLauncher.launch(arrayOf("*/*"))
+            },
+            onOpenFileAlternative = {
+                viewModel.hideFileBrowserDialog()
+                // Use GetContent approach
+                getContentLauncher.launch("*/*")
+            },
+            onOpenRecentFile = { recentFile ->
+                viewModel.openRecentFile(recentFile)
+            },
+            recentFiles = recentFiles
+        )
+
+        // Language Configuration Dialog
+        com.kotlintexteditor.ui.dialogs.LanguageConfigurationDialog(
+            isVisible = isLanguageConfigDialogVisible,
+            onDismiss = viewModel::hideLanguageConfigDialog
+        )
+
+        // About Dialog
+        AboutDialog(
+            isVisible = isAboutDialogVisible,
+            onDismiss = { isAboutDialogVisible = false }
+        )
+
+        // Settings Dialog
+        SettingsDialog(
+            isVisible = isSettingsDialogVisible,
+            onDismiss = { isSettingsDialogVisible = false },
+            isAutoSaveEnabled = uiState.autoSaveEnabled,
+            onAutoSaveToggle = viewModel::toggleAutoSave
+        )
+        }
     }
 }
 
