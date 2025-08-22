@@ -151,6 +151,12 @@ class EnhancedLanguageManager private constructor(private val context: Context) 
                 isHighlightCurrentLine = true
                 tabWidth = 4
                 
+                // Fix caps lock issue by setting proper input type
+                // This disables auto-capitalization and other automatic text transformations
+                inputType = android.text.InputType.TYPE_CLASS_TEXT or 
+                           android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+                           android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+                
                 // Enable magnifier
                 getComponent(io.github.rosemoe.sora.widget.component.Magnifier::class.java)?.isEnabled = true
                 

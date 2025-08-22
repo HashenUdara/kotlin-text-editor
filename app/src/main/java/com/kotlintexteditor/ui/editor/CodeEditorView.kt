@@ -42,6 +42,11 @@ fun CodeEditorView(
         modifier = modifier,
         factory = {
             codeEditor.apply {
+                // Fix caps lock and input issues by configuring input type early
+                inputType = android.text.InputType.TYPE_CLASS_TEXT or 
+                           android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+                           android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+                
                 // Set up text change listener
                 subscribeEvent(ContentChangeEvent::class.java) { event, unsubscribe ->
                     val newText = codeEditor.text.toString()
