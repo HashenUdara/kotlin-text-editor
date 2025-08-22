@@ -170,45 +170,62 @@ private fun LanguageSelectionSection(
             icon = Icons.Outlined.Category
         )
         
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            LanguageCard(
-                language = EditorLanguage.KOTLIN,
-                icon = Icons.Outlined.Code,
-                title = "Kotlin",
-                description = ".kt",
-                color = MaterialTheme.colorScheme.primary,
-                selected = selectedLanguage == EditorLanguage.KOTLIN,
-                modifier = Modifier.weight(1f),
-                onSelect = { onLanguageSelect(EditorLanguage.KOTLIN) }
-            )
-            
-            LanguageCard(
-                language = EditorLanguage.JAVA,
-                icon = Icons.Outlined.DataObject,
-                title = "Java",
-                description = ".java",
-                color = MaterialTheme.colorScheme.tertiary,
-                selected = selectedLanguage == EditorLanguage.JAVA,
-                modifier = Modifier.weight(1f),
-                onSelect = { onLanguageSelect(EditorLanguage.JAVA) }
-            )
-            
-            LanguageCard(
-                language = EditorLanguage.PLAIN_TEXT,
-                icon = Icons.Outlined.TextSnippet,
-                title = "Text",
-                description = ".txt",
-                color = MaterialTheme.colorScheme.secondary,
-                selected = selectedLanguage == EditorLanguage.PLAIN_TEXT,
-                modifier = Modifier.weight(1f),
-                onSelect = { onLanguageSelect(EditorLanguage.PLAIN_TEXT) }
-            )
+        // All supported languages with their configurations
+        val languages = listOf(
+            LanguageConfig(EditorLanguage.KOTLIN, "Kotlin", ".kt", Icons.Outlined.Code, MaterialTheme.colorScheme.primary),
+            LanguageConfig(EditorLanguage.JAVA, "Java", ".java", Icons.Outlined.DataObject, MaterialTheme.colorScheme.tertiary),
+            LanguageConfig(EditorLanguage.PYTHON, "Python", ".py", Icons.Outlined.Code, MaterialTheme.colorScheme.secondary),
+            LanguageConfig(EditorLanguage.JAVASCRIPT, "JavaScript", ".js", Icons.Outlined.Javascript, MaterialTheme.colorScheme.primary),
+            LanguageConfig(EditorLanguage.TYPESCRIPT, "TypeScript", ".ts", Icons.Outlined.Code, MaterialTheme.colorScheme.primary),
+            LanguageConfig(EditorLanguage.CSHARP, "C#", ".cs", Icons.Outlined.Code, MaterialTheme.colorScheme.tertiary),
+            LanguageConfig(EditorLanguage.CPP, "C++", ".cpp", Icons.Outlined.Code, MaterialTheme.colorScheme.secondary),
+            LanguageConfig(EditorLanguage.HTML, "HTML", ".html", Icons.Outlined.Html, MaterialTheme.colorScheme.primary),
+            LanguageConfig(EditorLanguage.CSS, "CSS", ".css", Icons.Outlined.Css, MaterialTheme.colorScheme.secondary),
+            LanguageConfig(EditorLanguage.JSON, "JSON", ".json", Icons.Outlined.DataObject, MaterialTheme.colorScheme.tertiary),
+            LanguageConfig(EditorLanguage.XML, "XML", ".xml", Icons.Outlined.Code, MaterialTheme.colorScheme.primary),
+            LanguageConfig(EditorLanguage.YAML, "YAML", ".yml", Icons.Outlined.Description, MaterialTheme.colorScheme.secondary),
+            LanguageConfig(EditorLanguage.MARKDOWN, "Markdown", ".md", Icons.Outlined.Description, MaterialTheme.colorScheme.tertiary),
+            LanguageConfig(EditorLanguage.PLAIN_TEXT, "Plain Text", ".txt", Icons.Outlined.TextSnippet, MaterialTheme.colorScheme.primary)
+        )
+        
+        // Display languages in a grid (3 columns)
+        languages.chunked(3).forEach { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                row.forEach { config ->
+                    LanguageCard(
+                        language = config.language,
+                        icon = config.icon,
+                        title = config.title,
+                        description = config.extension,
+                        color = config.color,
+                        selected = selectedLanguage == config.language,
+                        modifier = Modifier.weight(1f),
+                        onSelect = { onLanguageSelect(config.language) }
+                    )
+                }
+                
+                // Add empty spacers if the row has fewer than 3 items
+                repeat(3 - row.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
         }
     }
 }
+
+/**
+ * Data class to hold language configuration
+ */
+private data class LanguageConfig(
+    val language: EditorLanguage,
+    val title: String,
+    val extension: String,
+    val icon: ImageVector,
+    val color: androidx.compose.ui.graphics.Color
+)
 
 @Composable
 private fun FileNameSection(
