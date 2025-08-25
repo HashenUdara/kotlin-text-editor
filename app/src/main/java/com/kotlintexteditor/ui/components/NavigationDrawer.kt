@@ -24,6 +24,7 @@ fun NavigationDrawer(
     onAutoSaveToggle: () -> Unit,
     onAboutClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onTestADBClick: () -> Unit,
     isAutoSaveEnabled: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -94,6 +95,18 @@ fun NavigationDrawer(
                 title = "About",
                 subtitle = "App information & credits",
                 onClick = onAboutClick
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        // Debug Section
+        DrawerSection(title = "Debug Tools") {
+            DrawerMenuItem(
+                icon = Icons.Default.BugReport,
+                title = "Test ADB Connection",
+                subtitle = "Debug compilation connectivity",
+                onClick = onTestADBClick
             )
         }
         

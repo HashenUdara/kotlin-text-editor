@@ -33,6 +33,7 @@ import com.kotlintexteditor.ui.editor.EnhancedFindReplaceDialog
 import com.kotlintexteditor.ui.dialogs.NewFileDialog
 import com.kotlintexteditor.ui.dialogs.FileBrowserDialog
 import com.kotlintexteditor.ui.dialogs.LanguageConfigurationDialog
+import com.kotlintexteditor.ui.dialogs.CompilationDialog
 import com.kotlintexteditor.ui.components.NavigationDrawer
 import com.kotlintexteditor.ui.components.AboutDialog
 import com.kotlintexteditor.ui.components.SettingsDialog
@@ -88,6 +89,11 @@ fun TextEditorApp() {
     // Language Configuration Dialog state
     val isLanguageConfigDialogVisible by viewModel.isLanguageConfigDialogVisible.collectAsState()
     
+    // Compilation Dialog state
+    val isCompilationDialogVisible by viewModel.isCompilationDialogVisible.collectAsState()
+    val compilationState by viewModel.compilationState.collectAsState()
+    val compilationResult by viewModel.compilationResult.collectAsState()
+    
     // File operation launchers
     val openFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -141,6 +147,10 @@ fun TextEditorApp() {
                         scope.launch { drawerState.close() }
                         isSettingsDialogVisible = true
                     },
+                    onTestADBClick = {
+                        scope.launch { drawerState.close() }
+                        viewModel.testADBConnection()
+                    },
                     isAutoSaveEnabled = uiState.autoSaveEnabled
                 )
             }
@@ -190,6 +200,17 @@ fun TextEditorApp() {
                             Icon(
                                 imageVector = if (uiState.currentFileUri != null) Icons.Default.Save else Icons.Default.SaveAs,
                                 contentDescription = if (uiState.currentFileUri != null) "Save" else "Save As"
+                            )
+                        }
+
+                        // Compile button (primary action)
+                        IconButton(
+                            onClick = { viewModel.compileCode() },
+                            enabled = editorState.language == EditorLanguage.KOTLIN || editorState.language == EditorLanguage.JAVA
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Build,
+                                contentDescription = "Compile Code"
                             )
                         }
                     }
@@ -322,6 +343,15 @@ fun TextEditorApp() {
             onDismiss = { isSettingsDialogVisible = false },
             isAutoSaveEnabled = uiState.autoSaveEnabled,
             onAutoSaveToggle = viewModel::toggleAutoSave
+        )
+        
+        // Compilation Dialog
+        CompilationDialog(
+            isVisible = isCompilationDialogVisible,
+            compilationState = compilationState,
+            compilationResult = compilationResult,
+            onDismiss = viewModel::hideCompilationDialog,
+            onRetry = viewModel::retryCompilation
         )
         }
     }

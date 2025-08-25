@@ -6,6 +6,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.kotlintexteditor.data.FileManager
 import com.kotlintexteditor.ui.dialogs.FileTemplate
+import com.kotlintexteditor.compiler.CompilerManager
+import com.kotlintexteditor.compiler.CompilationState
+import com.kotlintexteditor.compiler.CompilationResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,7 +19,8 @@ class TextEditorViewModel(application: Application) : AndroidViewModel(applicati
     private val fileManager = FileManager(application)
     private val textOperationsManager = TextOperationsManager(application)
     private val searchManager = SearchManager()
-        private val enhancedLanguageManager = com.kotlintexteditor.syntax.EnhancedLanguageManager.getInstance(application)
+    private val enhancedLanguageManager = com.kotlintexteditor.syntax.EnhancedLanguageManager.getInstance(application)
+    private val compilerManager = CompilerManager(application)
 
     // Track the original content when a file is opened for comparison
     private var originalFileContent: String = ""
@@ -102,6 +106,13 @@ class TextEditor {
     // Recent files tracking
     private val _recentFiles = MutableStateFlow<List<com.kotlintexteditor.ui.dialogs.RecentFile>>(emptyList())
     val recentFiles: StateFlow<List<com.kotlintexteditor.ui.dialogs.RecentFile>> = _recentFiles.asStateFlow()
+    
+    // Compilation state
+    private val _isCompilationDialogVisible = MutableStateFlow(false)
+    val isCompilationDialogVisible: StateFlow<Boolean> = _isCompilationDialogVisible.asStateFlow()
+    
+    val compilationState: StateFlow<CompilationState> = compilerManager.compilationState
+    val compilationResult: StateFlow<CompilationResult?> = compilerManager.compilationResult
     
     /**
      * Update editor text content
@@ -219,6 +230,126 @@ class TextEditor {
         }
     }
     
+    // ============ COMPILATION FUNCTIONALITY ============
+    
+    /**
+     * Compiles the current Kotlin code using desktop compiler
+     */
+    fun compileCode() {
+        viewModelScope.launch {
+            try {
+                // Show compilation dialog
+                showCompilationDialog()
+                
+                // Check if current file is Kotlin or Java
+                val currentLanguage = _editorState.value.language
+                if (currentLanguage != EditorLanguage.KOTLIN && currentLanguage != EditorLanguage.JAVA) {
+                    // TODO: Show error - unsupported language
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = "Compilation is only supported for Kotlin and Java files"
+                    )
+                    hideCompilationDialog()
+                    return@launch
+                }
+                
+                // Get current code content
+                val sourceCode = _editorState.value.text
+                if (sourceCode.isBlank()) {
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = "No code to compile"
+                    )
+                    hideCompilationDialog()
+                    return@launch
+                }
+                
+                // Determine file name
+                val fileName = _editorState.value.filePath?.let { path ->
+                    path.substringAfterLast("/")
+                } ?: when (currentLanguage) {
+                    EditorLanguage.KOTLIN -> "Main.kt"
+                    EditorLanguage.JAVA -> "Main.java"
+                    else -> "Main.kt"
+                }
+                
+                // Perform compilation
+                val result = compilerManager.compileKotlinCode(sourceCode, fileName)
+                
+                // Handle result - dialog will show automatically via state flow
+                when (result) {
+                    is CompilationResult.Success -> {
+                        _uiState.value = _uiState.value.copy(
+                            statusMessage = "Compilation successful: ${result.outputPath}"
+                        )
+                    }
+                    is CompilationResult.Error -> {
+                        _uiState.value = _uiState.value.copy(
+                            errorMessage = result.message
+                        )
+                    }
+                }
+                
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Compilation failed: ${e.message}"
+                )
+                hideCompilationDialog()
+            }
+        }
+    }
+    
+    /**
+     * Retry compilation after error
+     */
+    fun retryCompilation() {
+        compileCode()
+    }
+    
+    /**
+     * Check if desktop bridge connection is available
+     */
+    fun checkBridgeConnection() {
+        viewModelScope.launch {
+            try {
+                val isConnected = compilerManager.checkBridgeConnection()
+                
+                _uiState.value = _uiState.value.copy(
+                    statusMessage = if (isConnected) {
+                        "Desktop bridge connection: OK"
+                    } else {
+                        "Desktop bridge connection: Not available"
+                    }
+                )
+                
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Bridge connection check failed: ${e.message}"
+                )
+            }
+        }
+    }
+    
+    /**
+     * Test ADB connection with detailed logging - for debugging
+     */
+    fun testADBConnection() {
+        viewModelScope.launch {
+            try {
+                val testResults = compilerManager.testADBConnection()
+                
+                _uiState.value = _uiState.value.copy(
+                    statusMessage = "ADB Test Results:\n$testResults"
+                )
+                
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "ADB test failed: ${e.message}"
+                )
+            }
+        }
+    }
+    
+    // ===============================================
+    
     /**
      * Show new file dialog
      */
@@ -259,6 +390,16 @@ class TextEditor {
      */
     fun hideLanguageConfigDialog() {
         _isLanguageConfigDialogVisible.value = false
+    }
+    
+    // Compilation Dialog Management
+    fun showCompilationDialog() {
+        _isCompilationDialogVisible.value = true
+    }
+    
+    fun hideCompilationDialog() {
+        _isCompilationDialogVisible.value = false
+        compilerManager.clearCompilationState()
     }
     
     /**
