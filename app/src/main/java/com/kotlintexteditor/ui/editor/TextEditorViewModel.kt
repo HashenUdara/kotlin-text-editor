@@ -9,6 +9,7 @@ import com.kotlintexteditor.ui.dialogs.FileTemplate
 import com.kotlintexteditor.compiler.CompilerManager
 import com.kotlintexteditor.compiler.CompilationResult
 import com.kotlintexteditor.compiler.CompilationState
+import com.kotlintexteditor.compiler.RunResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -114,6 +115,7 @@ class TextEditor {
     // Compilation state and result (delegated to CompilerManager)
     val compilationState: StateFlow<CompilationState> = compilerManager.compilationState
     val compilationResult: StateFlow<CompilationResult?> = compilerManager.compilationResult
+    val runResult: StateFlow<RunResult?> = compilerManager.runResult
     val isBridgeConnected: StateFlow<Boolean> = compilerManager.isBridgeConnected
     
     /**
@@ -789,6 +791,29 @@ class TextEditor {
         }
     }
     
+    /**
+     * Run the compiled code
+     */
+    fun runCompiledCode() {
+        viewModelScope.launch {
+            try {
+                val currentResult = compilerManager.compilationResult.value
+                if (currentResult is CompilationResult.Success && currentResult.outputPath.isNotEmpty()) {
+                    // Run the compiled JAR
+                    compilerManager.runCompiledCode(currentResult.outputPath)
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = "No compiled output to run. Please compile first."
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Run failed: ${e.message}"
+                )
+            }
+        }
+    }
+
     /**
      * Check bridge connection status
      */

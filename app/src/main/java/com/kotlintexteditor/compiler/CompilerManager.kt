@@ -30,6 +30,10 @@ class CompilerManager(private val context: Context) {
     private val _isBridgeConnected = MutableStateFlow(false)
     val isBridgeConnected: StateFlow<Boolean> = _isBridgeConnected.asStateFlow()
     
+    // Run result
+    private val _runResult = MutableStateFlow<RunResult?>(null)
+    val runResult: StateFlow<RunResult?> = _runResult.asStateFlow()
+    
     /**
      * Test ADB connection and desktop bridge
      */
@@ -155,11 +159,72 @@ class CompilerManager(private val context: Context) {
     }
     
     /**
+     * Run the compiled JAR file
+     */
+    suspend fun runCompiledCode(jarPath: String): RunResult {
+        return try {
+            Log.d(TAG, "Starting program execution: $jarPath")
+            
+            // Validate JAR path
+            if (jarPath.isBlank()) {
+                return RunResult.Error(
+                    message = "Invalid JAR path",
+                    details = "JAR path cannot be empty"
+                )
+            }
+            
+            // Update state
+            _compilationState.value = CompilationState.COMPILING // Reuse for running
+            _runResult.value = null
+            
+            // Check bridge connection first
+            Log.d(TAG, "Checking bridge connection...")
+            val bridgeConnected = adbClient.checkBridgeConnection()
+            _isBridgeConnected.value = bridgeConnected
+            
+            if (!bridgeConnected) {
+                _compilationState.value = CompilationState.ERROR
+                return RunResult.Error(
+                    message = "Desktop bridge not connected",
+                    details = "Make sure the desktop bridge is running and device is connected via USB"
+                )
+            }
+            
+            // Execute the JAR
+            Log.d(TAG, "Executing JAR file...")
+            val result = adbClient.runJarFile(jarPath)
+            _runResult.value = result
+            
+            // Update state based on result
+            _compilationState.value = when (result) {
+                is RunResult.Success -> CompilationState.SUCCESS
+                is RunResult.Error -> CompilationState.ERROR
+            }
+            
+            Log.d(TAG, "Program execution completed: ${result.javaClass.simpleName}")
+            result
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Run error", e)
+            _compilationState.value = CompilationState.ERROR
+            _isBridgeConnected.value = false
+            
+            val errorResult = RunResult.Error(
+                message = "Run failed",
+                details = e.message ?: "Unknown error"
+            )
+            _runResult.value = errorResult
+            errorResult
+        }
+    }
+
+    /**
      * Reset compilation state
      */
     fun resetState() {
         _compilationState.value = CompilationState.IDLE
         _compilationResult.value = null
+        _runResult.value = null
     }
     
     /**

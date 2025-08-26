@@ -174,6 +174,52 @@ class ADBClient(private val context: Context) {
     }
     
     /**
+     * Run compiled JAR file on desktop
+     */
+    suspend fun runJarFile(jarPath: String): RunResult {
+        return withContext(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "Starting JAR execution: $jarPath")
+                
+                // Create run command
+                val command = RunCommand(
+                    type = "run",
+                    jar_path = jarPath,
+                    timestamp = System.currentTimeMillis()
+                )
+                
+                // Send command to desktop
+                val commandSent = sendRunCommandToDesktop(command)
+                if (!commandSent) {
+                    return@withContext RunResult.Error(
+                        message = "Failed to send run command to desktop",
+                        details = "Could not write command file via ADB"
+                    )
+                }
+                
+                // Wait for response
+                val response = waitForResponse(CONNECTION_TIMEOUT)
+                if (response == null) {
+                    return@withContext RunResult.Error(
+                        message = "Run timeout",
+                        details = "No response from desktop bridge within ${CONNECTION_TIMEOUT / 1000} seconds"
+                    )
+                }
+                
+                // Parse run result
+                return@withContext parseRunResponse(response)
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "Run error", e)
+                return@withContext RunResult.Error(
+                    message = "Run failed",
+                    details = e.message ?: "Unknown error"
+                )
+            }
+        }
+    }
+
+    /**
      * Check if desktop bridge is running
      */
     suspend fun checkBridgeConnection(): Boolean {
@@ -263,6 +309,37 @@ class ADBClient(private val context: Context) {
         }
     }
     
+    private suspend fun sendRunCommandToDesktop(command: RunCommand): Boolean {
+        return try {
+            val commandJson = json.encodeToString(command)
+            
+            // Log the JSON we're about to send
+            Log.d(TAG, "Sending run command JSON: $commandJson")
+            Log.d(TAG, "JSON length: ${commandJson.length} characters")
+            Log.d(TAG, "JSON bytes: ${commandJson.toByteArray().contentToString()}")
+            
+            // Write command to external files directory
+            val commandFilePath = getCommandFilePath()
+            val commandFile = File(commandFilePath)
+            commandFile.writeText(commandJson)
+            
+            // Verify what was actually written
+            val writtenContent = commandFile.readText()
+            Log.d(TAG, "Verified written content: $writtenContent")
+            Log.d(TAG, "Content matches: ${commandJson == writtenContent}")
+            
+            Log.d(TAG, "Run command sent to desktop: $commandFilePath")
+            return true
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error sending run command to desktop", e)
+            Log.e(TAG, "Exception type: ${e.javaClass.simpleName}")
+            Log.e(TAG, "Exception message: ${e.message}")
+            Log.e(TAG, "Stack trace: ${e.stackTraceToString()}")
+            return false
+        }
+    }
+    
     private suspend fun waitForResponse(timeoutMs: Long): String? {
         val startTime = System.currentTimeMillis()
         
@@ -344,11 +421,19 @@ class ADBClient(private val context: Context) {
             Log.e(TAG, "Exception message: ${e.message}")
             Log.e(TAG, "Stack trace: ${e.stackTraceToString()}")
             
-            // If JSON parsing failed but we can see it's a success, create a success result manually
+            // If JSON parsing failed but we can see it's a success, try to extract the output path manually
             if (response.contains("\"success\": true") && response.contains("output_file")) {
-                Log.w(TAG, "JSON parsing failed but response indicates success - creating manual success result")
+                Log.w(TAG, "JSON parsing failed but response indicates success - trying manual extraction")
+                
+                // Try to extract the output path using regex
+                val outputPathPattern = "\"output_file\"\\s*:\\s*\"([^\"]+)\"".toRegex()
+                val outputPathMatch = outputPathPattern.find(response)
+                val extractedPath = outputPathMatch?.groupValues?.get(1)?.replace("\\\\", "\\") ?: ""
+                
+                Log.d(TAG, "Extracted output path: $extractedPath")
+                
                 CompilationResult.Success(
-                    outputPath = "Compilation successful (see logs for output path)",
+                    outputPath = extractedPath,
                     compilationTime = 0L,
                     stdout = "",
                     stderr = ""
@@ -356,6 +441,69 @@ class ADBClient(private val context: Context) {
             } else {
                 CompilationResult.Error(
                     message = "Failed to parse compilation response",
+                    details = "Raw response: '$response'\nError: ${e.message}"
+                )
+            }
+        }
+    }
+    
+    private fun parseRunResponse(response: String): RunResult {
+        return try {
+            Log.d(TAG, "Parsing run response: $response")
+            
+            // Clean up response - remove any extra whitespace or control characters
+            val cleanResponse = response.trim()
+            Log.d(TAG, "Cleaned response: $cleanResponse")
+            
+            // Try to parse as a generic map first
+            val responseData = json.decodeFromString<Map<String, Any?>>(cleanResponse)
+            Log.d(TAG, "Parsed response data: $responseData")
+            
+            val success = responseData["success"] as? Boolean ?: false
+            Log.d(TAG, "Run success: $success")
+            
+            if (success) {
+                val result = RunResult.Success(
+                    stdout = responseData["stdout"] as? String ?: "",
+                    stderr = responseData["stderr"] as? String ?: "",
+                    executionTime = (responseData["execution_time"] as? Double)?.toLong() ?: 0L,
+                    exitCode = (responseData["exit_code"] as? Double)?.toInt() ?: 0,
+                    jarPath = responseData["jar_path"] as? String ?: ""
+                )
+                Log.d(TAG, "Created run success result: $result")
+                result
+            } else {
+                val result = RunResult.Error(
+                    message = responseData["error_message"] as? String ?: "Program execution failed",
+                    details = responseData["stderr"] as? String ?: "",
+                    stdout = responseData["stdout"] as? String ?: ""
+                )
+                Log.d(TAG, "Created run error result: $result")
+                result
+            }
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error parsing run response", e)
+            Log.e(TAG, "Raw response that failed parsing: '$response'")
+            Log.e(TAG, "Response length: ${response.length}")
+            Log.e(TAG, "Response as bytes: ${response.toByteArray().contentToString()}")
+            Log.e(TAG, "Exception type: ${e.javaClass.simpleName}")
+            Log.e(TAG, "Exception message: ${e.message}")
+            Log.e(TAG, "Stack trace: ${e.stackTraceToString()}")
+            
+            // If JSON parsing failed but we can see it's a success, create a success result manually
+            if (response.contains("\"success\": true") && response.contains("stdout")) {
+                Log.w(TAG, "JSON parsing failed but response indicates success - creating manual success result")
+                RunResult.Success(
+                    stdout = "Program executed successfully (see logs for details)",
+                    stderr = "",
+                    executionTime = 0L,
+                    exitCode = 0,
+                    jarPath = ""
+                )
+            } else {
+                RunResult.Error(
+                    message = "Failed to parse run response",
                     details = "Raw response: '$response'\nError: ${e.message}"
                 )
             }
@@ -377,6 +525,13 @@ data class CompileCommand(
 @Serializable
 data class PingCommand(
     val type: String,
+    val timestamp: Long
+)
+
+@Serializable
+data class RunCommand(
+    val type: String,
+    val jar_path: String,
     val timestamp: Long
 )
 
@@ -441,4 +596,21 @@ sealed class CompilationResult {
         val stdout: String = "",
         val errors: List<String> = emptyList()
     ) : CompilationResult()
+}
+
+// Run result classes
+sealed class RunResult {
+    data class Success(
+        val stdout: String,
+        val stderr: String,
+        val executionTime: Long,
+        val exitCode: Int,
+        val jarPath: String
+    ) : RunResult()
+    
+    data class Error(
+        val message: String,
+        val details: String,
+        val stdout: String = ""
+    ) : RunResult()
 }

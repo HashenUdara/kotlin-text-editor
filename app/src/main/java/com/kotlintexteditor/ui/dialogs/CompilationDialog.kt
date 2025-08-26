@@ -17,6 +17,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.kotlintexteditor.compiler.CompilationResult
 import com.kotlintexteditor.compiler.CompilationState
+import com.kotlintexteditor.compiler.RunResult
 import com.kotlintexteditor.compiler.isInProgress
 import com.kotlintexteditor.compiler.isCompleted
 
@@ -29,8 +30,10 @@ fun CompilationDialog(
     isVisible: Boolean,
     compilationState: CompilationState,
     compilationResult: CompilationResult?,
+    runResult: RunResult?,
     onDismiss: () -> Unit,
     onRetry: () -> Unit,
+    onRun: () -> Unit,
     onTestConnection: () -> Unit
 ) {
     if (!isVisible) return
@@ -82,9 +85,17 @@ fun CompilationDialog(
                     }
                     
                     CompilationState.SUCCESS -> {
-                        compilationResult?.let { result ->
-                            if (result is CompilationResult.Success) {
-                                CompilationSuccessContent(result = result)
+                        // Show run result if available, otherwise compilation result
+                        runResult?.let { result ->
+                            when (result) {
+                                is RunResult.Success -> RunSuccessContent(result = result)
+                                is RunResult.Error -> RunErrorContent(result = result)
+                            }
+                        } ?: run {
+                            compilationResult?.let { result ->
+                                if (result is CompilationResult.Success) {
+                                    CompilationSuccessContent(result = result)
+                                }
                             }
                         }
                     }
@@ -104,8 +115,10 @@ fun CompilationDialog(
                 CompilationDialogActions(
                     state = compilationState,
                     result = compilationResult,
+                    runResult = runResult,
                     onDismiss = onDismiss,
                     onRetry = onRetry,
+                    onRun = onRun,
                     onTestConnection = onTestConnection
                 )
             }
@@ -335,6 +348,140 @@ private fun CompilationErrorContent(result: CompilationResult.Error) {
 }
 
 @Composable
+private fun RunSuccessContent(result: RunResult.Success) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // Success message
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = null,
+                tint = Color(0xFF4CAF50),
+                modifier = Modifier.size(20.dp)
+            )
+            
+            Spacer(modifier = Modifier.width(8.dp))
+            
+            Text(
+                text = "Program executed successfully!",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color(0xFF4CAF50),
+                fontWeight = FontWeight.Medium
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Execution details
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                CompilationDetailRow(
+                    label = "Exit Code:",
+                    value = result.exitCode.toString()
+                )
+                
+                CompilationDetailRow(
+                    label = "Execution Time:",
+                    value = "${result.executionTime}ms"
+                )
+                
+                if (result.stdout.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    CompilationDetailRow(
+                        label = "Program Output:",
+                        value = result.stdout,
+                        isCode = true
+                    )
+                }
+                
+                if (result.stderr.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    CompilationDetailRow(
+                        label = "Error Output:",
+                        value = result.stderr,
+                        isCode = true
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RunErrorContent(result: RunResult.Error) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // Error message
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Error,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(20.dp)
+            )
+            
+            Spacer(modifier = Modifier.width(8.dp))
+            
+            Text(
+                text = result.message,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.error,
+                fontWeight = FontWeight.Medium
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Error details
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState())
+                    .heightIn(max = 200.dp)
+            ) {
+                if (result.details.isNotEmpty()) {
+                    CompilationDetailRow(
+                        label = "Details:",
+                        value = result.details,
+                        isCode = true
+                    )
+                }
+                
+                if (result.stdout.isNotEmpty()) {
+                    if (result.details.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                    CompilationDetailRow(
+                        label = "Program Output:",
+                        value = result.stdout,
+                        isCode = true
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun CompilationDetailRow(
     label: String,
     value: String,
@@ -363,8 +510,10 @@ private fun CompilationDetailRow(
 private fun CompilationDialogActions(
     state: CompilationState,
     result: CompilationResult?,
+    runResult: RunResult?,
     onDismiss: () -> Unit,
     onRetry: () -> Unit,
+    onRun: () -> Unit,
     onTestConnection: () -> Unit
 ) {
     Row(
@@ -379,8 +528,31 @@ private fun CompilationDialogActions(
             }
             
             CompilationState.SUCCESS -> {
-                TextButton(onClick = onDismiss) {
-                    Text("Close")
+                // Show different buttons based on what result we're showing
+                if (runResult != null) {
+                    // Showing run results - only show close
+                    TextButton(onClick = onDismiss) {
+                        Text("Close")
+                    }
+                } else {
+                    // Showing compilation results - show run and close buttons
+                    val canRun = result is CompilationResult.Success && result.outputPath.isNotEmpty()
+                    
+                    if (canRun) {
+                        Button(onClick = onRun) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Run")
+                        }
+                    }
+                    
+                    TextButton(onClick = onDismiss) {
+                        Text("Close")
+                    }
                 }
             }
             

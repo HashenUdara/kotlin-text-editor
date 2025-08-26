@@ -93,6 +93,7 @@ fun TextEditorApp() {
     val isCompilationDialogVisible by viewModel.isCompilationDialogVisible.collectAsState()
     val compilationState by viewModel.compilationState.collectAsState()
     val compilationResult by viewModel.compilationResult.collectAsState()
+    val runResult by viewModel.runResult.collectAsState()
     val isBridgeConnected by viewModel.isBridgeConnected.collectAsState()
     
     // File operation launchers
@@ -339,8 +340,10 @@ fun TextEditorApp() {
             isVisible = isCompilationDialogVisible,
             compilationState = compilationState,
             compilationResult = compilationResult,
+            runResult = runResult,
             onDismiss = viewModel::hideCompilationDialog,
             onRetry = viewModel::retryCompilation,
+            onRun = viewModel::runCompiledCode,
             onTestConnection = viewModel::testADBConnection
         )
 

@@ -462,6 +462,83 @@ class ADBCommandHandler:
             )
             self._send_result_to_device(error_result, app_files_dir)
     
+    def _handle_run_command(self, command_data: dict, app_files_dir: str):
+        """Handle run command - execute compiled JAR file"""
+        try:
+            jar_path = command_data.get('jar_path')
+            if not jar_path:
+                error_result = {
+                    'type': 'run_result',
+                    'success': False,
+                    'error_message': 'No JAR path provided',
+                    'stdout': '',
+                    'stderr': 'JAR path is required for execution'
+                }
+                self._send_response_to_device(error_result, app_files_dir)
+                return
+            
+            print(f"[<] Running JAR: {jar_path}")
+            
+            # Check if JAR file exists
+            if not Path(jar_path).exists():
+                error_result = {
+                    'type': 'run_result',
+                    'success': False,
+                    'error_message': f'JAR file not found: {jar_path}',
+                    'stdout': '',
+                    'stderr': f'File does not exist: {jar_path}'
+                }
+                self._send_response_to_device(error_result, app_files_dir)
+                return
+            
+            # Execute the JAR file
+            start_time = time.time()
+            result = subprocess.run([
+                'java', '-jar', jar_path
+            ], capture_output=True, text=True, timeout=30, shell=True)
+            execution_time = time.time() - start_time
+            
+            # Prepare result
+            run_result = {
+                'type': 'run_result',
+                'success': result.returncode == 0,
+                'stdout': result.stdout,
+                'stderr': result.stderr,
+                'exit_code': result.returncode,
+                'execution_time': execution_time,
+                'jar_path': jar_path
+            }
+            
+            if result.returncode == 0:
+                print(f"[+] Program executed successfully in {execution_time:.2f}s")
+                print(f"[+] Output: {result.stdout.strip()}")
+            else:
+                print(f"[!] Program execution failed with exit code {result.returncode}")
+                print(f"[!] Error: {result.stderr.strip()}")
+            
+            self._send_response_to_device(run_result, app_files_dir)
+            
+        except subprocess.TimeoutExpired:
+            error_result = {
+                'type': 'run_result',
+                'success': False,
+                'error_message': 'Program execution timeout (30 seconds)',
+                'stdout': '',
+                'stderr': 'Execution timed out after 30 seconds'
+            }
+            self._send_response_to_device(error_result, app_files_dir)
+            
+        except Exception as e:
+            print(f"[!] Error running program: {str(e)}")
+            error_result = {
+                'type': 'run_result',
+                'success': False,
+                'error_message': f'Execution error: {str(e)}',
+                'stdout': '',
+                'stderr': str(e)
+            }
+            self._send_response_to_device(error_result, app_files_dir)
+
     def _handle_ping_command(self, app_files_dir: str):
         """Handle ping command"""
         print("[<] Ping request")
