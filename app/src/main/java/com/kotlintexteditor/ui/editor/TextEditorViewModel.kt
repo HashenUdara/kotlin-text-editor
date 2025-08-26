@@ -6,6 +6,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.kotlintexteditor.data.FileManager
 import com.kotlintexteditor.ui.dialogs.FileTemplate
+import com.kotlintexteditor.compiler.CompilerManager
+import com.kotlintexteditor.compiler.CompilationResult
+import com.kotlintexteditor.compiler.CompilationState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,7 +19,8 @@ class TextEditorViewModel(application: Application) : AndroidViewModel(applicati
     private val fileManager = FileManager(application)
     private val textOperationsManager = TextOperationsManager(application)
     private val searchManager = SearchManager()
-        private val enhancedLanguageManager = com.kotlintexteditor.syntax.EnhancedLanguageManager.getInstance(application)
+    private val enhancedLanguageManager = com.kotlintexteditor.syntax.EnhancedLanguageManager.getInstance(application)
+    private val compilerManager = CompilerManager(application)
 
     // Track the original content when a file is opened for comparison
     private var originalFileContent: String = ""
@@ -102,6 +106,15 @@ class TextEditor {
     // Recent files tracking
     private val _recentFiles = MutableStateFlow<List<com.kotlintexteditor.ui.dialogs.RecentFile>>(emptyList())
     val recentFiles: StateFlow<List<com.kotlintexteditor.ui.dialogs.RecentFile>> = _recentFiles.asStateFlow()
+    
+    // Compilation dialog state
+    private val _isCompilationDialogVisible = MutableStateFlow(false)
+    val isCompilationDialogVisible: StateFlow<Boolean> = _isCompilationDialogVisible.asStateFlow()
+    
+    // Compilation state and result (delegated to CompilerManager)
+    val compilationState: StateFlow<CompilationState> = compilerManager.compilationState
+    val compilationResult: StateFlow<CompilationResult?> = compilerManager.compilationResult
+    val isBridgeConnected: StateFlow<Boolean> = compilerManager.isBridgeConnected
     
     /**
      * Update editor text content
@@ -696,6 +709,93 @@ class TextEditor {
      */
     fun clearRecentFiles() {
         _recentFiles.value = emptyList()
+    }
+    
+    // === Compilation Functions ===
+    
+    /**
+     * Show compilation dialog
+     */
+    fun showCompilationDialog() {
+        _isCompilationDialogVisible.value = true
+    }
+    
+    /**
+     * Hide compilation dialog
+     */
+    fun hideCompilationDialog() {
+        _isCompilationDialogVisible.value = false
+        compilerManager.resetState()
+    }
+    
+    /**
+     * Compile the current source code
+     */
+    fun compileCode() {
+        viewModelScope.launch {
+            try {
+                // Show compilation dialog
+                showCompilationDialog()
+                
+                // Get current filename and source code
+                val currentState = _editorState.value
+                val filename = currentState.filePath?.substringAfterLast('/') ?: "Main.kt"
+                val sourceCode = currentState.text
+                
+                // Validate that we have source code
+                if (sourceCode.isBlank()) {
+                    compilerManager.resetState()
+                    return@launch
+                }
+                
+                // Start compilation
+                compilerManager.compileCode(filename, sourceCode)
+                
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Compilation failed: ${e.message}"
+                )
+                hideCompilationDialog()
+            }
+        }
+    }
+    
+    /**
+     * Retry compilation
+     */
+    fun retryCompilation() {
+        compileCode()
+    }
+    
+    /**
+     * Test ADB connection
+     */
+    fun testADBConnection() {
+        viewModelScope.launch {
+            try {
+                showCompilationDialog()
+                val testResult = compilerManager.testADBConnection()
+                
+                // Show test results in status message
+                _uiState.value = _uiState.value.copy(
+                    statusMessage = testResult
+                )
+                
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "ADB test failed: ${e.message}"
+                )
+            }
+        }
+    }
+    
+    /**
+     * Check bridge connection status
+     */
+    fun checkBridgeConnection() {
+        viewModelScope.launch {
+            compilerManager.checkBridgeConnection()
+        }
     }
 }
 

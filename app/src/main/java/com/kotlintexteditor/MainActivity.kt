@@ -33,6 +33,7 @@ import com.kotlintexteditor.ui.editor.EnhancedFindReplaceDialog
 import com.kotlintexteditor.ui.dialogs.NewFileDialog
 import com.kotlintexteditor.ui.dialogs.FileBrowserDialog
 import com.kotlintexteditor.ui.dialogs.LanguageConfigurationDialog
+import com.kotlintexteditor.ui.dialogs.CompilationDialog
 import com.kotlintexteditor.ui.components.NavigationDrawer
 import com.kotlintexteditor.ui.components.AboutDialog
 import com.kotlintexteditor.ui.components.SettingsDialog
@@ -88,6 +89,12 @@ fun TextEditorApp() {
     // Language Configuration Dialog state
     val isLanguageConfigDialogVisible by viewModel.isLanguageConfigDialogVisible.collectAsState()
     
+    // Compilation dialog state
+    val isCompilationDialogVisible by viewModel.isCompilationDialogVisible.collectAsState()
+    val compilationState by viewModel.compilationState.collectAsState()
+    val compilationResult by viewModel.compilationResult.collectAsState()
+    val isBridgeConnected by viewModel.isBridgeConnected.collectAsState()
+    
     // File operation launchers
     val openFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -117,7 +124,7 @@ fun TextEditorApp() {
         Manifest.permission.READ_EXTERNAL_STORAGE
     )
 
-        ModalNavigationDrawer(
+    ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
@@ -140,6 +147,10 @@ fun TextEditorApp() {
                     onSettingsClick = {
                         scope.launch { drawerState.close() }
                         isSettingsDialogVisible = true
+                    },
+                    onTestADBClick = {
+                        scope.launch { drawerState.close() }
+                        viewModel.testADBConnection()
                     },
                     isAutoSaveEnabled = uiState.autoSaveEnabled
                 )
@@ -190,6 +201,19 @@ fun TextEditorApp() {
                             Icon(
                                 imageVector = if (uiState.currentFileUri != null) Icons.Default.Save else Icons.Default.SaveAs,
                                 contentDescription = if (uiState.currentFileUri != null) "Save" else "Save As"
+                            )
+                        }
+
+                        // Compile button (primary action)
+                        IconButton(
+                            onClick = { viewModel.compileCode() },
+                            enabled = editorState.text.isNotBlank() && 
+                                     (editorState.language == EditorLanguage.KOTLIN || 
+                                      editorState.language == EditorLanguage.JAVA)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Build,
+                                contentDescription = "Compile Code"
                             )
                         }
                     }
@@ -308,6 +332,16 @@ fun TextEditorApp() {
         com.kotlintexteditor.ui.dialogs.LanguageConfigurationDialog(
             isVisible = isLanguageConfigDialogVisible,
             onDismiss = viewModel::hideLanguageConfigDialog
+        )
+
+        // Compilation Dialog
+        CompilationDialog(
+            isVisible = isCompilationDialogVisible,
+            compilationState = compilationState,
+            compilationResult = compilationResult,
+            onDismiss = viewModel::hideCompilationDialog,
+            onRetry = viewModel::retryCompilation,
+            onTestConnection = viewModel::testADBConnection
         )
 
         // About Dialog
