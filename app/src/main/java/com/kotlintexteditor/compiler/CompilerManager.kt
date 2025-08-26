@@ -195,6 +195,16 @@ class CompilerManager(private val context: Context) {
             val result = adbClient.runJarFile(jarPath)
             _runResult.value = result
             
+            // Log the run result details
+            when (result) {
+                is RunResult.Success -> {
+                    Log.d(TAG, "Run successful - stdout: '${result.stdout}', stderr: '${result.stderr}', exitCode: ${result.exitCode}, time: ${result.executionTime}ms")
+                }
+                is RunResult.Error -> {
+                    Log.e(TAG, "Run failed - message: '${result.message}', details: '${result.details}'")
+                }
+            }
+            
             // Update state based on result
             _compilationState.value = when (result) {
                 is RunResult.Success -> CompilationState.SUCCESS

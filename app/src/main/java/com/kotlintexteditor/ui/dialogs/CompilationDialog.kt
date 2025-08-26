@@ -395,14 +395,13 @@ private fun RunSuccessContent(result: RunResult.Success) {
                     value = "${result.executionTime}ms"
                 )
                 
-                if (result.stdout.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    CompilationDetailRow(
-                        label = "Program Output:",
-                        value = result.stdout,
-                        isCode = true
-                    )
-                }
+                // Always show program output section, even if empty
+                Spacer(modifier = Modifier.height(8.dp))
+                CompilationDetailRow(
+                    label = "Program Output:",
+                    value = if (result.stdout.isNotEmpty()) result.stdout else "(No output)",
+                    isCode = true
+                )
                 
                 if (result.stderr.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))

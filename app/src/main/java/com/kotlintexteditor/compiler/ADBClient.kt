@@ -491,14 +491,40 @@ class ADBClient(private val context: Context) {
             Log.e(TAG, "Exception message: ${e.message}")
             Log.e(TAG, "Stack trace: ${e.stackTraceToString()}")
             
-            // If JSON parsing failed but we can see it's a success, create a success result manually
-            if (response.contains("\"success\": true") && response.contains("stdout")) {
-                Log.w(TAG, "JSON parsing failed but response indicates success - creating manual success result")
+            // If JSON parsing failed but we can see it's a success, try to extract the output manually
+            if (response.contains("\"success\": true")) {
+                Log.w(TAG, "JSON parsing failed but response indicates success - trying manual extraction")
+                
+                // Try to extract the stdout using regex
+                val stdoutPattern = "\"stdout\"\\s*:\\s*\"([^\"]*)\"".toRegex()
+                val stdoutMatch = stdoutPattern.find(response)
+                val extractedStdout = stdoutMatch?.groupValues?.get(1)?.replace("\\n", "\n")?.replace("\\\"", "\"") ?: ""
+                
+                // Try to extract the stderr using regex
+                val stderrPattern = "\"stderr\"\\s*:\\s*\"([^\"]*)\"".toRegex()
+                val stderrMatch = stderrPattern.find(response)
+                val extractedStderr = stderrMatch?.groupValues?.get(1)?.replace("\\n", "\n")?.replace("\\\"", "\"") ?: ""
+                
+                // Try to extract execution time
+                val timePattern = "\"execution_time\"\\s*:\\s*([0-9.]+)".toRegex()
+                val timeMatch = timePattern.find(response)
+                val extractedTime = timeMatch?.groupValues?.get(1)?.toDoubleOrNull()?.toLong() ?: 0L
+                
+                // Try to extract exit code
+                val exitCodePattern = "\"exit_code\"\\s*:\\s*([0-9]+)".toRegex()
+                val exitCodeMatch = exitCodePattern.find(response)
+                val extractedExitCode = exitCodeMatch?.groupValues?.get(1)?.toIntOrNull() ?: 0
+                
+                Log.d(TAG, "Extracted stdout: '$extractedStdout'")
+                Log.d(TAG, "Extracted stderr: '$extractedStderr'")
+                Log.d(TAG, "Extracted execution time: ${extractedTime}ms")
+                Log.d(TAG, "Extracted exit code: $extractedExitCode")
+                
                 RunResult.Success(
-                    stdout = "Program executed successfully (see logs for details)",
-                    stderr = "",
-                    executionTime = 0L,
-                    exitCode = 0,
+                    stdout = extractedStdout,
+                    stderr = extractedStderr,
+                    executionTime = extractedTime,
+                    exitCode = extractedExitCode,
                     jarPath = ""
                 )
             } else {
