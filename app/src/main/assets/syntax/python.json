@@ -1,0 +1,73 @@
+{
+  "name": "Python",
+  "fileExtensions": ["py", "pyw"],
+  "keywords": {
+    "primary": [
+      "and", "as", "assert", "async", "await", "break", "class", "continue", 
+      "def", "del", "elif", "else", "except", "exec", "finally", "for", 
+      "from", "global", "if", "import", "in", "is", "lambda", "nonlocal", 
+      "not", "or", "pass", "raise", "return", "try", "while", "with", "yield"
+    ],
+    "secondary": [
+      "False", "None", "True", "__debug__", "__doc__", "__file__", "__name__", 
+      "__package__", "__spec__"
+    ],
+    "types": [
+      "bool", "int", "float", "complex", "str", "bytes", "bytearray", "list", 
+      "tuple", "range", "dict", "set", "frozenset", "type", "object", "slice"
+    ],
+    "literals": ["True", "False", "None"],
+    "functions": [
+      "abs", "aiter", "all", "any", "anext", "ascii", "bin", "bool", "breakpoint", 
+      "bytearray", "bytes", "callable", "chr", "classmethod", "compile", "complex", 
+      "delattr", "dict", "dir", "divmod", "enumerate", "eval", "exec", "filter", 
+      "float", "format", "frozenset", "getattr", "globals", "hasattr", "hash", 
+      "help", "hex", "id", "input", "int", "isinstance", "issubclass", "iter", 
+      "len", "list", "locals", "map", "max", "memoryview", "min", "next", "object", 
+      "oct", "open", "ord", "pow", "print", "property", "range", "repr", "reversed", 
+      "round", "set", "setattr", "slice", "sorted", "staticmethod", "str", "sum", 
+      "super", "tuple", "type", "vars", "zip"
+    ],
+    "constants": [
+      "__name__", "__doc__", "__file__", "__annotations__", "__dict__", "__module__", 
+      "__qualname__", "__class__", "__bases__", "__mro__"
+    ]
+  },
+  "patterns": {
+    "singleLineComment": "#",
+    "multiLineCommentStart": "\"\"\"",
+    "multiLineCommentEnd": "\"\"\"",
+    "stringDelimiters": ["\"", "'", "\"\"\"", "'''", "f\"", "f'", "r\"", "r'", "b\"", "b'"],
+    "numberPattern": "\\b\\d+(\\.\\d+)?([eE][+-]?\\d+)?\\b",
+    "identifierPattern": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b",
+    "operatorPattern": "[+\\-*/=%<>!&|^~@]",
+    "bracketPattern": "[\\[\\]{}()]",
+    "functionCallPattern": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
+    "classPattern": "\\bclass\\s+([A-Z][a-zA-Z0-9_]*)",
+    "importPattern": "\\b(import|from)\\s+([a-zA-Z0-9_.]+)"
+  },
+  "colors": {
+    "keyword": "#FF7B72",
+    "secondaryKeyword": "#FFA657",
+    "type": "#79C0FF",
+    "string": "#A5C261",
+    "number": "#79C0FF",
+    "comment": "#8B949E",
+    "operator": "#FF7B72",
+    "function": "#D2A8FF",
+    "class_": "#FFA657",
+    "literal": "#FF7B72",
+    "identifier": "#E6EDF3",
+    "annotation": "#FFA657"
+  },
+  "features": {
+    "caseSensitive": true,
+    "indentSize": 4,
+    "usesTabs": false,
+    "autoIndent": true,
+    "bracketMatching": true,
+    "lineNumbers": true,
+    "wordWrap": false,
+    "highlightCurrentLine": true
+  }
+}
