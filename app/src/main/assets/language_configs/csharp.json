@@ -1,0 +1,74 @@
+{
+  "name": "C#",
+  "fileExtensions": ["cs"],
+  "keywords": {
+    "primary": [
+      "abstract", "as", "base", "bool", "break", "byte", "case", "catch",
+      "char", "checked", "class", "const", "continue", "decimal", "default",
+      "delegate", "do", "double", "else", "enum", "event", "explicit",
+      "extern", "false", "finally", "fixed", "float", "for", "foreach",
+      "goto", "if", "implicit", "in", "int", "interface", "internal",
+      "is", "lock", "long", "namespace", "new", "null", "object",
+      "operator", "out", "override", "params", "private", "protected",
+      "public", "readonly", "ref", "return", "sbyte", "sealed", "short",
+      "sizeof", "stackalloc", "static", "string", "struct", "switch",
+      "this", "throw", "true", "try", "typeof", "uint", "ulong",
+      "unchecked", "unsafe", "ushort", "using", "virtual", "void",
+      "volatile", "while"
+    ],
+    "secondary": [
+      "async", "await", "dynamic", "get", "global", "partial", "set",
+      "value", "var", "when", "where", "yield"
+    ],
+    "types": [
+      "bool", "byte", "sbyte", "char", "decimal", "double", "float",
+      "int", "uint", "long", "ulong", "short", "ushort", "object",
+      "string", "Array", "List", "Dictionary", "IEnumerable", "IList",
+      "IDictionary", "Collection", "ArrayList", "Hashtable", "Queue",
+      "Stack", "StringBuilder", "DateTime", "TimeSpan", "Guid"
+    ],
+    "literals": ["true", "false", "null"],
+    "functions": [
+      "Console.WriteLine", "Console.Write", "Console.ReadLine",
+      "ToString", "Equals", "GetHashCode", "GetType", "ReferenceEquals",
+      "Parse", "TryParse", "Convert.ToInt32", "Convert.ToString",
+      "String.IsNullOrEmpty", "String.IsNullOrWhiteSpace"
+    ]
+  },
+  "patterns": {
+    "singleLineComment": "//",
+    "multiLineCommentStart": "/*",
+    "multiLineCommentEnd": "*/",
+    "stringDelimiters": ["\"", "'"],
+    "numberPattern": "\\b\\d+(\\.\\d+)?[fFdDmM]?\\b",
+    "identifierPattern": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b",
+    "operatorPattern": "[+\\-*/=%<>!&|^~?:]",
+    "bracketPattern": "[\\[\\]{}()]",
+    "functionCallPattern": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
+    "attributePattern": "\\[[a-zA-Z_][a-zA-Z0-9_]*\\]"
+  },
+  "colors": {
+    "keyword": "#569CD6",
+    "secondaryKeyword": "#C586C0",
+    "type": "#4EC9B0",
+    "string": "#CE9178",
+    "number": "#B5CEA8",
+    "comment": "#6A9955",
+    "operator": "#D4D4D4",
+    "function": "#DCDCAA",
+    "class": "#4EC9B0",
+    "literal": "#569CD6",
+    "identifier": "#D4D4D4",
+    "annotation": "#C586C0"
+  },
+  "features": {
+    "lineNumbers": true,
+    "wordWrap": false,
+    "highlightCurrentLine": true,
+    "bracketMatching": true,
+    "autoIndent": true,
+    "indentSize": 4,
+    "usesTabs": false,
+    "caseSensitive": true
+  }
+}

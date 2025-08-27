@@ -162,7 +162,7 @@ fun TextEditorApp() {
             topBar = {
                 TopAppBar(
                     title = {
-                        Text("Kotlin Text Editor")
+                        Text("LetuZ")
                     },
                     navigationIcon = {
                         IconButton(onClick = {
@@ -498,7 +498,7 @@ fun TextEditorPreview() {
             
             Column {
                 TopAppBar(
-                    title = { Text("Kotlin Text Editor") }
+                    title = { Text("LetuZ") }
                 )
                 
                 Box(modifier = Modifier.weight(1f)) {

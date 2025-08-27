@@ -11,11 +11,13 @@ import kotlinx.coroutines.*
 /**
  * Enhanced language manager that provides the best available syntax highlighting
  * for each supported language using Sora Editor's built-in capabilities
+ * Now includes JSON configuration support
  */
 class EnhancedLanguageManager private constructor(private val context: Context) {
     
     private var isInitialized = false
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val jsonConfigManager = JsonConfigurationManager(context)
     
     companion object {
         @Volatile
@@ -36,7 +38,9 @@ class EnhancedLanguageManager private constructor(private val context: Context) 
         
         withContext(Dispatchers.IO) {
             try {
-                // Initialize any required components
+                // Initialize JSON configuration system
+                val availableLanguages = jsonConfigManager.getAvailableLanguages()
+                android.util.Log.d("EnhancedLanguageManager", "Initialized with ${availableLanguages.size} language configurations")
                 isInitialized = true
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -173,5 +177,63 @@ class EnhancedLanguageManager private constructor(private val context: Context) 
             editor.setEditorLanguage(EmptyLanguage())
             com.kotlintexteditor.ui.editor.WorkingVSCodeTheme.applyToEditor(editor)
         }
+    }
+    
+    // === JSON Configuration Methods ===
+    
+    /**
+     * Load language configuration from JSON
+     */
+    suspend fun getLanguageConfiguration(language: EditorLanguage): LanguageConfiguration? {
+        return jsonConfigManager.loadConfiguration(language)
+    }
+    
+    /**
+     * Save language configuration as JSON
+     */
+    suspend fun saveLanguageConfiguration(language: EditorLanguage, configuration: LanguageConfiguration): Boolean {
+        return jsonConfigManager.saveConfiguration(language, configuration)
+    }
+    
+    /**
+     * Export language configuration to JSON string
+     */
+    suspend fun exportConfigurationToJson(language: EditorLanguage): String? {
+        return jsonConfigManager.exportConfigurationToJson(language)
+    }
+    
+    /**
+     * Load configuration from JSON string
+     */
+    suspend fun loadConfigurationFromJson(jsonString: String): Result<LanguageConfiguration> {
+        return jsonConfigManager.loadConfigurationFromJson(jsonString)
+    }
+    
+    /**
+     * Get list of available languages with JSON configurations
+     */
+    suspend fun getAvailableLanguages(): List<EditorLanguage> {
+        return jsonConfigManager.getAvailableLanguages()
+    }
+    
+    /**
+     * Reset language to default configuration
+     */
+    suspend fun resetToDefault(language: EditorLanguage): Boolean {
+        return jsonConfigManager.resetToDefault(language)
+    }
+    
+    /**
+     * Check if language has user customizations
+     */
+    suspend fun hasUserCustomizations(language: EditorLanguage): Boolean {
+        return jsonConfigManager.hasUserCustomizations(language)
+    }
+    
+    /**
+     * Get example JSON template for a language
+     */
+    suspend fun getExampleTemplate(language: EditorLanguage): String {
+        return jsonConfigManager.getExampleTemplate(language)
     }
 }

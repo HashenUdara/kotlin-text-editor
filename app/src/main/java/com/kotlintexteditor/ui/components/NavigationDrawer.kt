@@ -133,7 +133,7 @@ private fun DrawerHeader() {
         Spacer(modifier = Modifier.height(8.dp))
         
         Text(
-            text = "Kotlin Text Editor",
+            text = "LetuZ",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
@@ -264,7 +264,7 @@ fun AboutDialog(
             )
         },
         title = {
-            Text("Kotlin Text Editor")
+            Text("LetuZ")
         },
         text = {
             Column {

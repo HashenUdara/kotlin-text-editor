@@ -36,32 +36,9 @@ class TextEditorViewModel(application: Application) : AndroidViewModel(applicati
     // Editor state
     private val _editorState = MutableStateFlow(
         EditorState(
-            text = """// Welcome to Kotlin Text Editor!
-// This is a powerful code editor for Android
-// 
-// Features:
-// - Syntax highlighting
-// - File operations (Open, Save, New)
-// - Find and Replace
-// - Multiple language support
-// 
-fun main() {
+            text = """fun main() {
     println("Hello, World!")
-    
-    val editor = TextEditor()
-    editor.loadFile("example.kt")
-}
-
-class TextEditor {
-    fun loadFile(fileName: String) {
-        println("Loading file: " + fileName)
-    }
-    
-    fun saveFile(content: String) {
-        println("Saving file with " + content.length + " characters")
-    }
-}
-""",
+}""",
             language = EditorLanguage.KOTLIN
         )
     )
